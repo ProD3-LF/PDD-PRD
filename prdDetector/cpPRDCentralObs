@@ -1,0 +1,88 @@
+#/* SPDX-License-Identifier: Apache-2.0 */
+#/* Copyright (c) 2012-2023 Applied Communication Sciences
+# * (now Peraton Labs Inc.)
+# *
+# * This software was developed in work supported by the following U.S.
+# * Government contracts:
+# *
+# * HR0011-20-C-0160 HR0011-16-C-0061
+# * 
+# *
+# * Any opinions, findings and conclusions or recommendations expressed in
+# * this material are those of the author(s) and do not necessarily reflect
+# * the views, either expressed or implied, of the U.S. Government.
+# *
+# * DoD Distribution Statement A
+# * Approved for Public Release, Distribution Unlimited
+# *
+# * DISTAR Case 38846, cleared November 1, 2023
+# *
+# * Licensed under the Apache License, Version 2.0 (the "License");
+# * you may not use this file except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# * http://www.apache.org/licenses/LICENSE-2.0
+# */
+TMPWORKINGDIR=`./getPrdParameter TMPWORKINGDIR`
+STOREDMODELDIR=`./getPrdParameter STOREDMODELDIR`
+CENTRAL=`./getPrdParameter CENTRAL`
+OBSCOLLECTED=`./getPrdParameter OBSCOLLECTED`
+STOREDCWMAPFILE=`./getPrdParameter STOREDCWMAPFILE`
+rm -rf $TMPWORKINGDIR
+mkdir -p $TMPWORKINGDIR
+shopt -s extglob
+VM=$1
+conflicts=""
+noconflicts=""
+mkdir -p $STOREDMODELDIR
+touch $STOREDCWMAPFILE
+for p in $OBSCOLLECTED/$VM/PRD/[0-9][0-9]*/
+do
+	echo "source dir is $p"
+	if test -d $p
+	then
+		i="$p/cwmap.obs"
+		if test -f $i
+		then
+			d=""
+			newcw=`cat $i | sed -e "s/^.*,//"`
+			for n in $newcw
+			do
+				echo $n
+				grep ",$n" $STOREDCWMPAFILE >/dev/null
+				if test "${?}" = "0"
+				then
+					echo $i has a conflict
+					d=`echo $i | sed -e "s/\/cwmap.obs$//"`
+					echo "conflict is $n"
+					conflicts="$conflicts $d"
+					break
+				fi
+			done
+			if test "${d}" = ""
+			then
+				d=`echo $i | sed -e "s/\/cwmap.obs$//"`
+				noconflicts="$noconflicts $d"
+				cat $i >> $STOREDCWMAPFILE
+				for k in $d/prdObs.[0-9][0-9]*
+				do
+					if test -f $k
+					then
+						cp $k $TMPWORKINGDIR
+					fi
+				done
+			fi
+		else
+			noconflicts="$noconflicts $p"
+			for k in $p/prdObs.[0-9][0-9]*
+			do
+				if test -f $k
+				then
+					cp $k $TMPWORKINGDIR
+				fi
+			done
+		fi
+	fi
+done
+echo conflicts=$conflicts
+echo noconflicts=$noconflicts
