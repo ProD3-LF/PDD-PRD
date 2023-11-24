@@ -24,7 +24,6 @@
 # * http://www.apache.org/licenses/LICENSE-2.0
 # */
 #!/bin/bash
-
 PRDMODELS=`./getPrdParameter STOREDMODELDIR`
 MODELDIR=`./getPrdParameter MODELDIR`
 TMPWORKINGDIR=`./getPrdParameter TMPWORKINGDIR`
