@@ -23,9 +23,9 @@
 # *
 # * http://www.apache.org/licenses/LICENSE-2.0
 # */
-CENTRAL=`./getPddParameter CENTRAL`
-OBSUNCOLLECTED=`./getPddParameter OBSUNCOLLECTED`
-OBSCOLLECTED=`./getPddParameter OBSCOLLECTED`
+CENTRAL=`./getPrdParameter CENTRAL`
+OBSUNCOLLECTED=`./getPrdParameter OBSUNCOLLECTED`
+OBSCOLLECTED=`./getPrdParameter OBSCOLLECTED`
 function execCmd {
         eval $1
         if test "${?}" != "0"
@@ -36,14 +36,15 @@ function execCmd {
 }
 if test "$USER" == "root"
 then
-	echo "cannot run as root"
+	echo "cannot run as root: are you in venv?"
 	exit
 fi
 echo running as $USER in $CENTRAL from $OBSUNCOLLECTED
 execCmd "mkdir -p $CENTRAL"
-execCmd "cd $OBSUNCOLLECTED"
-execCmd "tar -czf /tmp/pddObsTmp.tgz */PDD"
-execCmd "cd -"
+execCmd "mkdir -p $OBSUNCOLLECTED"
 execCmd "mkdir -p $OBSCOLLECTED"
-execCmd "tar -C $OBSCOLLECTED -xzf /tmp/pddObsTmp.tgz"
-execCmd "sudo rm -rf */PDD"
+execCmd "cd $OBSUNCOLLECTED"
+execCmd "tar -czf /tmp/prdObsTmp.tgz */PRD"
+execCmd "cd -"
+execCmd "tar -C $OBSCOLLECTED -xzf /tmp/prdObsTmp.tgz"
+execCmd "sudo rm -rf */PRD"
