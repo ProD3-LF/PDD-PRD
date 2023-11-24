@@ -23,6 +23,12 @@
 # *
 # * http://www.apache.org/licenses/LICENSE-2.0
 # */
+if test "$PD3_PREFIX" == ""
+then
+	echo "PD3_PREFIX not set using parent dir"
+else
+	PD3_PREFIX="$PD3_PREFIX/"
+fi
 STOREDMODELDIR=`./getPrdParameter STOREDMODELDIR`
 rm -rf $STOREDMODELDIR.*
 rm -rf $STOREDMODELDIR
