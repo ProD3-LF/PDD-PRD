@@ -50,9 +50,9 @@ xterm -geometry 39x4+0+200 -title "PRD DETECTOR" -fn $FN2 -e bash -c "cd prdDete
 echo "kill -9 $!" >> stop
 echo "pkill -9 prdDetector" >> stop
 sleep 1
-xterm  -geometry 44x14+575+425 -fn $FN2 -e "tail -s 1 -F /tmp/PRDG | ttyplot/ttyplot -E '*' -M 1 -t 'PRD Alerts Per Second' -c '*'" &
+xterm  -geometry 70x30+575+425 -fn $FN4 -e "tail -s 1 -F /tmp/PRDG | ttyplot/ttyplot -E '*' -M 1 -t 'PRD Alerts Per Second' -c '*'" &
 echo "kill $!" >> stop
-xterm  -geometry 44x14+0+425 -fn $FN2 -e "tail -s 1 -F /tmp/PDDG | ttyplot/ttyplot -E '*' -M 1 -t 'PDD Alerts Per Second' -c '*'" &
+xterm  -geometry 70x30+0+425 -fn $FN4 -e "tail -s 1 -F /tmp/PDDG | ttyplot/ttyplot -E '*' -M 1 -t 'PDD Alerts Per Second' -c '*'" &
 echo "kill $!" >> stop
 sleep 1
 xterm -geometry 39x3+0+0 -title "SENSOR" -fn $FN2 -e bash -c "cd sensor && ./tcpdumpSensor --speedFactor 1 ${SENSORARGS} 2> /tmp/sensor.stderr" &
