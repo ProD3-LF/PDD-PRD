@@ -49,13 +49,11 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 include $(BUILD)/Make.include.mk
 include $(BUILD)/Make.recurse.mk
-COMMONMODELDIR=../../../artifacts/central/models/common
 .PHONY: clean 
 all:
 
 clean:
-	rm -rf $(DIST_CONF)/central/models/common
+	#rm -rf $(DIST_CONF)/central/models/common
 install:
-	rm -rf $(DIST_CONF)/central/models/common
-	mkdir -p $(DIST_CONF)/central/models
-	cp -r $(COMMONMODELDIR) $(DIST_CONF)/central/models
+	#rm -rf $(DIST_CONF)/central/models/common
+	#mkdir -p $(DIST_CONF)/central/models
