@@ -127,8 +127,8 @@ void pddConfig(){
       		logMessage(stderr,__FUNCTION__,__LINE__,"no host independent servers in config: will autodetect only");
 	}
   }
-  if (adRecord == 1){
-       	setupObsPath();
+  if (adRecord == true){
+       	//setupObsPath();
 	setupThreadObsFd();
   }
   if (t != 0){
@@ -138,9 +138,9 @@ void pddConfig(){
   fclose(configFile);
 }
 void pddInit() {
-  	(*INITALERT)();
 	setlocale(LC_NUMERIC, "");
 	pddConfig();
+  	(*INITALERT)();
 	initSERVD();
 	for(size_t j=0;j<NFIFOS;++j){
 		SAMPLERATE[j]=-1;
