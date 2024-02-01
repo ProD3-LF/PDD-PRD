@@ -51,12 +51,14 @@ size_t NGRAMSSTARTSHORT=0;
 size_t NGRAMSABANDONED=0;
 static FILE *threadObsFd[NFIFOS];
 void flushThreadObsFd(){
+	if (adRecord==0) return;
 	for(size_t i=0;i<NFIFOS;++i){
 		logMessage(stderr,__FUNCTION__,__LINE__,"flushed %lu",i);
 		fflush(threadObsFd[i]);
 	}
 }
 void setupThreadObsFd(){
+	if (adRecord==0) return;
 	char fileName[PATH_MAX];
 	for(size_t i=0;i<NFIFOS;++i){
 		snprintf(fileName,sizeof(fileName),
