@@ -36,6 +36,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 prdModel **tmpModel;
 int isPRD(const struct dirent *d){
 
