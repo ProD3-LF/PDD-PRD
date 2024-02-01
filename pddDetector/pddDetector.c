@@ -33,6 +33,7 @@
 #include <limits.h>
 #include <malloc.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -93,8 +94,8 @@ pddObs *QRemoveData() {
 	exitCS();
 	return data;
 }
-int DONE=0;
 #define EMPTYQWAIT 100
+int DONE=0;
 void *processQ(void *a){
 	while (1==1){
 		pddObs *d=QRemoveData();
@@ -172,7 +173,21 @@ void (*SENDALERT)(uint32_t serverIP,uint32_t serverPort,uint32_t clientIP,
 		uint16_t clientPort, enum SCalert type,int v[],int n);
 #define SELECTTIMEOUT 10
 #define FIFOERRCNT 100
-#define FIFOWAITPERIOD 1000
+#define FIFOWAITPERIOD 1000000
+void handleSig(int s){
+	if (s == SIGTERM)  {
+		logMessage(stderr,__FUNCTION__,__LINE__,"got %d setting done\n",s);
+		DONE=1;
+	}
+	if (s == SIGINT)  {
+		logMessage(stderr,__FUNCTION__,__LINE__,"got %d exiting\n",s);
+		exit(0);
+	}
+	if (s != SIGCHLD){
+	       	logMessage(stderr,__FUNCTION__,__LINE__,"got %d\n",s);
+	}
+	       	logMessage(stderr,__FUNCTION__,__LINE__,"TFB got %d\n",s);
+}
 void pddMain(callBacks *c) {
 	int fd[NFIFOS],n=0;
 	struct timeval t={SELECTTIMEOUT,0};
@@ -190,6 +205,9 @@ void pddMain(callBacks *c) {
 	fprintf(stdout,
 		"\e[4m\e[1m             PDD DETECTOR             \e[m\n");
 	fprintf(stdout, "%10s %10s %10s\n","TIME","OBSIN","ANOMALIES");
+	for(int i=0;i<SIGSYS;++i){
+		if (i!=SIGSEGV) signal(i,handleSig);
+	}
 	for(size_t i=0;i<NFIFOS;++i){
 		char fifoName[PATH_MAX];
 		snprintf(fifoName,sizeof(fifoName),"/tmp/PDDFifo%ld",i);
@@ -229,6 +247,7 @@ void pddMain(callBacks *c) {
 					"all fifos closed\n");
 			goto shutdown;
 		}
+		if (DONE==1) goto shutdown;
 		if ((s=select(nfds,&rfds,0,0,tp))==-1){
 			logMessage(stderr,__FUNCTION__,__LINE__,
 					"select: %s",strerror(errno));
@@ -242,7 +261,10 @@ void pddMain(callBacks *c) {
 		tp->tv_sec=SELECTTIMEOUT;
 		for (size_t i=0;i<NFIFOS;++i){
 			if (FD_ISSET(fd[i],&rfds)){
-				if (readFromFifo(&fd[i])==0){continue;}
+				if (readFromFifo(&fd[i])==0){
+					flushThreadObsFd();
+					continue;
+				}
 				logMessage(stderr,__FUNCTION__, __LINE__,
 					"readFromFifo failed, exiting");
 				goto shutdown;
