@@ -37,6 +37,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 int minCW=MAXCW*2;
 int maxCW=0;
 zProb PZ[MAXCW*2];
