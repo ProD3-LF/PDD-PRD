@@ -158,7 +158,6 @@ void outputPRDCounts(serverData *c,long long unsigned int obsTime){
 	fclose(obsFile);
 	c->lastCheck=obsTime;
 }
-#define MAXSERVER 10
 void initCounts(){
 	for(size_t i=0;i<NSERVD;++i){
 		resetCounts(&SERVD[i]);
@@ -178,7 +177,7 @@ void dumpPRDCnt(serverData *c,long long unsigned int start,long long unsigned in
 	for(int i=0;i<MAXCW*2;++i){
 		if (c->prdCount[i]!=0){
 		       char cws[SHORTSTRING];
-		       convertCw(i-MAXCW,cws);
+		       convertCw(i-MAXCW,cws,SHORTSTRING);
 	       	       logMessage(stderr,__FUNCTION__,__LINE__,"CWDUMP %s %d\n",cws,c->prdCount[i]);
 		}
 	}
