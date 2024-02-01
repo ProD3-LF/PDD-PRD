@@ -26,6 +26,7 @@
 #include "defs.h"
 #include "pddFileDefs.h"
 #include <errno.h>
+#include <limits.h>
 #include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,9 +70,14 @@ int main(){
 	char lastFileName[PATH_MAX],fileName[PATH_MAX];
 	char buf[PATH_MAX+LONGSTRING];
 	char obsPath[PATH_MAX];
+	char hostName[HOST_NAME_MAX];
 	size_t totLines=0;
+	if (gethostname(hostName,HOST_NAME_MAX)==-1){
+		fprintf(stderr,"gethostname() %s",strerror(errno));
+		strncpy(hostName,"UNKNOWNHOST",HOST_NAME_MAX);
+	}
 	fprintf(stdout,"cat and sorting\n");
-	snprintf(buf,sizeof(buf),"cat %s.* > %s.cat",MASTERTRAINFILE,MASTERTRAINFILE);
+	snprintf(buf,sizeof(buf),"for i in %s.thread*; do cat $i; done > %s.cat",MASTERTRAINFILE,MASTERTRAINFILE);
 	system(buf);
 	snprintf(buf,sizeof(buf),"sort -u %s.cat > %s.sorted",MASTERTRAINFILE,MASTERTRAINFILE);
 	system(buf);
@@ -83,7 +89,7 @@ int main(){
 			MASTERTRAINFILE,strerror(errno));
 		exit(-1);
 	}
-	snprintf(obsPath,sizeof(obsPath),OBSDIR,"control",time(0));
+	snprintf(obsPath,sizeof(obsPath),OBSDIR,hostName,time(0));
 	mkdirEach(obsPath);
 	if (chdir(obsPath)!=0){
 		fprintf(stderr,"chdir(%s): %s\n",obsPath,strerror(errno));
