@@ -37,6 +37,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 long long COUNT[MAXFILES][MAXCW*2];
 prdModel **tmpModel;
 long long int low=MAXCW*2,high=0;
