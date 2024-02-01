@@ -107,12 +107,19 @@ void flushAlerts(){
 void sendPddAlert(uint32_t serverIP,uint32_t serverPort,uint32_t clientIP,
 	uint16_t clientPort,enum SCalert type,int v[],int n){
 	char clientIPs[SHORTSTRING],serverIPs[SHORTSTRING];
+	char d[512];
+	d[0]=0;
 	struct in_addr t;
+	for (int i=0;i<n;++i){
+		char t[10];
+		sprintf(t,"%d ",v[i]);
+		strcat(d,t);
+	}
 	t.s_addr=serverIP;
 	strncpy(serverIPs,inet_ntoa(t),sizeof(serverIPs));
 	t.s_addr=clientIP;
 	strncpy(clientIPs,inet_ntoa(t),sizeof(clientIPs));
-	fprintf(alertsFile,"%lu %15s.%-6u %15s.%-6u %-8s %2d\n",
-			time(0),clientIPs,ntohs(clientPort),serverIPs,
-			ntohs(serverPort),alertTypeString(type),n);
+	fprintf(alertsFile,"%lu %15s.%-6u %15s.%-6u %-8s %2d %s\n",
+			time(0),clientIPs,clientPort,serverIPs,
+			ntohs(serverPort),alertTypeString(type),n,d);
 }
