@@ -24,6 +24,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 #include <stdint.h>
+#include <stddef.h>
 #ifndef FLAGS_H
 #define FLAGS_H
 #define FIN 0x1
@@ -34,6 +35,8 @@
 #define URG 0x20
 #define MAXCW 128
 #define ERROR_STRING 10000
+extern int convertCwName(char *cwName);
+extern void convertCw(int cw,char *cws,size_t n);
 extern int inRequestedRange(int start,int stop,int k);
 extern int CWMAPN;
 extern int flagToCW[];
