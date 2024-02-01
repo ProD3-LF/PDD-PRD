@@ -126,9 +126,9 @@ void prdConfig(){
   free(t);
 }
 void prdInit() {
-	(*INITALERT)();
 	prdConfig();
 	initSERVD();
+	(*INITALERT)();
 	if (initModels()!=0){
 		logMessage(stderr,__FUNCTION__,__LINE__,"initModels failed\n");
 		exit(-1);
