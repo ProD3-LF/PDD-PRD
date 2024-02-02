@@ -68,8 +68,6 @@ extern void (*SENDALERT)(uint32_t serverIP,uint16_t serverPort,char *violation);
 #define PRDALERTINTERVAL 1000
 #define NINT (PRDCHECKTIME/PRDOBSTIME)
 #define prdDetectorBufferSize 1
-extern void convertCw(int cw,char *cws);
-extern int convertCwName(char *cwName);
 extern size_t CWIN;
 extern void updateStats(int allmax,int alltwo,int max,int two,int zero,char *name);
 extern long long unsigned int msecTime();

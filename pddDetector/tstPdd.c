@@ -27,6 +27,8 @@
 #include "pdd_seq_detector.h"
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 extern void initAlert();
 extern 	void flushAlert();
 extern 	void closeAlert();

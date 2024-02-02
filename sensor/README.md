@@ -33,21 +33,15 @@ and --speedFactor.
 pcapFile's value is the FQN of a pcap file.  If --pcapFile argument is
 present tcpdumpSensor uses this file as input to tcpdump.
 
-If the argument is not present tcpdumpSensor runs tcpdump online, using
+If the file is not present tcpdumpSensor runs tcpdump online, using
 the command in the file tcpdumpCommand.
 
 The tcpdump command is executed from within tcpdumpSensor as a system command.
 In on-line mode, the user should check that the arguments to tcpdump in
 the tcpdumpCommand file, (particularily the interface argument)
 are suitable for their environment.  The example tcpdump command in
-tcpdumpCommand is for monitoring an http server at 192.168.2.1:80, which coincides
-with the pcap samples provided in this distribution.  For illustrative purpose there
-is a commented out command for monitoring a local vncserver at port 5964.
-
+tcpdumpCommand is for monitoring a local vncserver at port 5964.
 The server and port specified in the tcpdumpcommand should agree with
 the protected server specified in ../common/config, otherwise the 
 sensor will not capture packets for the desired protected server.
-In the distribution ../common/config is setup for 192.168.2.1:80, so
-replay of the samples should work with no adjuestment.
-
 
