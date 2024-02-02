@@ -42,10 +42,7 @@ INCLUDES = \
 #-O3 \
 
 build: all
-all: prdAlertDisplay pddAlertDisplay fixLogging
-
-fixLogging: fixLogging.c
-	gcc -g -o fixLogging fixLogging.c
+all: prdAlertDisplay pddAlertDisplay
 
 pddAlertDisplay: pddAlertDisplay.o alertDisplay.o
 

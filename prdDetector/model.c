@@ -26,7 +26,6 @@
 #include "../common/flags.h"
 #include "../common/logMessage.h"
 #include "defs.h"
-#include "history.h"
 #include "prdFileDefs.h"
 #include "prdModel.h"
 #include "prdStdModel.h"
@@ -97,7 +96,6 @@ uint64_t comparCurToModel(char *name,unsigned int prdCount[],prdModel *curState,
 				int d = abs(curState->allRatio[i]-
 					PRDSTDMODEL.allDist[i].mean);
 				if (d > PRDSTDMODEL.allDist[i].max){
-					addAllMaxHist(now/1000,i-MAXCW);
 					logAnomaly(now,"ALLMAX",name,i-MAXCW,0,
 						PRDSTDMODEL.allDist[i].max,
 						PRDSTDMODEL.allDist[i].mean,
@@ -109,7 +107,6 @@ uint64_t comparCurToModel(char *name,unsigned int prdCount[],prdModel *curState,
 					++*allmax;
 				}
 				else if (d > 2*PRDSTDMODEL.allDist[i].stddev){
-					addAll2STDHist(now/1000,i-MAXCW);
 					logAnomaly(now,"ALL2STD",name,i-MAXCW,0,
 						PRDSTDMODEL.allDist[i].max,
 						PRDSTDMODEL.allDist[i].mean,
@@ -129,7 +126,6 @@ uint64_t comparCurToModel(char *name,unsigned int prdCount[],prdModel *curState,
 				if (zProb<ZPROBTHRESH){
 					++deviantCount;
 					++*zCount;
-					addZeroHist(now/1000,i-MAXCW,j-MAXCW);
 					logZeroAnomaly(now,name,i-MAXCW,j-MAXCW,
 						zProb,prdCount[j],ZPROBTHRESH);
 				}
@@ -165,7 +161,6 @@ uint64_t comparCurToModel(char *name,unsigned int prdCount[],prdModel *curState,
 			int d = abs(curState->ratio[i][j]-
 				PRDSTDMODEL.dist[i][j].mean);
 			if (d > PRDSTDMODEL.dist[i][j].max){
-				addMaxHist(now/1000,i-MAXCW,j-MAXCW);
 				logAnomaly(now,"MAX", name,i-MAXCW,j-MAXCW,
 					PRDSTDMODEL.dist[i][j].max,
 					PRDSTDMODEL.dist[i][j].mean,
@@ -177,7 +172,6 @@ uint64_t comparCurToModel(char *name,unsigned int prdCount[],prdModel *curState,
 				continue;
 			}
 			if (d > 2*PRDSTDMODEL.dist[i][j].stddev){
-				add2StdHist(now/1000,i-MAXCW,j-MAXCW);
 				logAnomaly(now,"2STD", name,i-MAXCW,j-MAXCW,
 					PRDSTDMODEL.dist[i][j].max,
 					PRDSTDMODEL.dist[i][j].mean,

@@ -61,7 +61,6 @@ prdObjects += processTcp.o
 prdObjects += prdAlert.o
 prdObjects += prdUtil.o
 prdObjects += model.o
-prdObjects += history.o
 prdObjects += ../common/flags.o
 prdObjects += ../common/logMessage.o 
 prdObjects += ../common/config.o
