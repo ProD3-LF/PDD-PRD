@@ -16,6 +16,7 @@
  * Approved for Public Release, Distribution Unlimited
  *
  * DISTAR Case 38846, cleared November 1, 2023
+ * DISTAR Case 39809, cleared May 22, 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +25,7 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 #include <unistd.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,10 +38,14 @@
 #include "../common/pddObs.h"
 #include "../common/logMessage.h"
 #include "../common/util.h"
+FILE *twFile=0;
 static long long unsigned int sensorStartTime=0;
 static long long unsigned int firstObsTime=0;
 size_t pddObsCnt=0;
 size_t prdObsCnt=0;
+void sldSensor(in_addr_t serverIP,in_addr_t serverPort,uint32_t clientIP,uint32_t clientPort,double obsTime){
+	handleSLDObs(obsTime,serverIP,serverPort,clientIP,clientPort);
+}
 void prdSensor(in_addr_t serverIP,uint32_t serverPort,int8_t direction,uint8_t flag,double obsTime){
 	handlePRDObs(obsTime,serverIP,serverPort,flag,direction);
 }
@@ -61,7 +67,7 @@ void adjustSpeed(long long unsigned int obsTime){
 		return;
 	}
 	if (relativeObsTime/speedFactor>relativeRealTime) {
-		logMessage(stderr,__FUNCTION__,__LINE__,"playback is fast %llu\n",(relativeObsTime/speedFactor-relativeRealTime)*1000);
+		logMessage(stderr,__FUNCTION__,__LINE__,"playback is fast %llu",(relativeObsTime/speedFactor-relativeRealTime)*1000);
 		usleep(((relativeObsTime/speedFactor-relativeRealTime)*1000));
 		return;
 	}
@@ -70,12 +76,33 @@ void adjustSpeed(long long unsigned int obsTime){
 //	--pcapFile: if present playback from pcap file.
 //	--speedFactor:  if present set speedFactor to value else 
 //		speedFactor is 1
+int WAIT=0;
+void handleSig(int s){
+	if ((s == SIGTERM) || (s == SIGINT))  {
+		logMessage(stderr,__FUNCTION__,__LINE__,"got %d exiting\n",s);
+		exit(0);
+	}
+	if (s == SIGUSR1){
+		WAIT=1;
+		return;
+	}
+	if (s == SIGUSR2){
+		WAIT=0;
+		return;
+	}
+	if (s != SIGCHLD){
+	       	logMessage(stderr,__FUNCTION__,__LINE__,"got %d\n",s);
+	}
+}
 extern size_t obsSent;
 int main(int argc, char *argv[]){
 	FILE *t;
 	char *pcapFile=0,b[512];
 	time_t lastScreenUpdate=0;
 	static long long unsigned int obsCnt=0;
+	for(int i=0;i<SIGSYS;++i){
+		if (i!=SIGSEGV) signal(i,handleSig);
+	}
 	for(size_t i=1;i<argc;++i){
 		if (strcmp("--pcapFile",argv[i])==0){
 			pcapFile=argv[++i];
@@ -86,10 +113,15 @@ int main(int argc, char *argv[]){
 			continue;
 		}
 	}
+	if ((twFile=fopen("/tmp/timeWarp.csv","w+e"))==0){
+	logMessage(stderr,__FUNCTION__,__LINE__,"fopen(/tmp/fimeWarp.csv): %s\n",strerror(errno));
+			
+	}
 	logMessage(stderr,__FUNCTION__,__LINE__,"pcapFile %s speedFactor\n",
 			pcapFile,speedFactor);
 	pddConfig();
 	prdConfig();
+	sldConfig();
 	if (pcapFile == 0) {
 		snprintf(b,512,"./tcpdumpCommand");
 	} else {
@@ -111,22 +143,35 @@ int main(int argc, char *argv[]){
 	}
 	while (fgets(b,512,t)){
 		in_addr_t serverPDDIP,clientPDDIP,serverPRDIP;
+		in_addr_t serverSLDIP,clientSLDIP;
 		uint32_t serverPDDPort,clientPDDPort,serverPRDPort;
+		uint32_t serverSLDPort,clientSLDPort;
 		int8_t direction;
 		uint8_t flag;
 		double obsTime;
-		if (parseTcpLine(b,&obsTime,&serverPDDIP,&clientPDDIP,
+		while (WAIT==1) {
+			sensorStartTime+=(1000*speedFactor);
+			sleep(1);
+		}
+		if (parseTcpLine(b,&obsTime,
+				&serverPDDIP,&clientPDDIP,
 				&serverPDDPort, &clientPDDPort,
-				&serverPRDIP, &serverPRDPort, &flag,
+				&serverPRDIP, &serverPRDPort,
+				&serverSLDIP,&clientSLDIP,
+				&serverSLDPort, &clientSLDPort,
+				&flag,
 				&direction)!=0){
 			logMessage(stderr,__FUNCTION__,__LINE__,
 					"parse failed %s\n",b);
 			continue;
 		}
+		if (twFile !=0) fprintf(twFile,"%1.7f,%ld\n",obsTime,time(0));
+		updatePddObsTime(obsTime);
 		++obsCnt;
 		adjustSpeed((long long unsigned int)(obsTime*1000));
 		pddSensor(serverPDDIP,clientPDDIP,serverPDDPort,clientPDDPort,direction,flag,obsTime);
 		prdSensor(serverPRDIP,serverPRDPort,direction,flag,obsTime);
+		sldSensor(serverSLDIP,serverSLDPort,clientSLDIP,clientSLDPort,obsTime);
 		if (time(0)-lastScreenUpdate>=1){
 	                fprintf(stdout, "%10llu %8llu %7llu %10llu\r",
                         msecTime()/1000,relativeRealTime/1000,

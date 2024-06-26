@@ -16,6 +16,7 @@
  * Approved for Public Release, Distribution Unlimited
  *
  * DISTAR Case 38846, cleared November 1, 2023
+ * DISTAR Case 39809, cleared May 22, 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,10 +36,12 @@
 #include "bucket.h"
 #include "defs.h"
 #include "../common/prdObs.h"
+#include "../common/sldObs.h"
 #include "../common/logMessage.h"
 static bucket B[NFIFOS];
 int pddFifoFd[NFIFOS];
 int prdFifoFd=0;
+int sldFifoFd=0;
 void initBucket(){
 	for (size_t i=0;i<NFIFOS;++i){
 		bucket *b=&B[i];
@@ -53,6 +56,46 @@ void initBucket(){
 		b->lastSampleChange=0;
 	}
 }		
+double sldFifoFailRate=0;
+void toSldFifo(sldObs *item){
+	int n;
+	static size_t noWriteError=0,againError=0;
+	size_t toWrite,haveWritten;
+	unsigned char *p=(unsigned char *)item;
+	toWrite=sizeof(*item);
+	haveWritten=0;
+	if (sldFifoFd == 0){
+		char fifoName[80];
+		sldFifoFailRate=0;
+		sprintf(fifoName,"/tmp/SLDFifo");
+		while ((sldFifoFd=open(fifoName, O_WRONLY|O_NONBLOCK))==-1){
+			logMessage(stderr,__FUNCTION__,__LINE__,
+				"open %s failed %s",
+				fifoName,strerror(errno));
+			sldFifoFd=0;
+			return;
+		}
+	}
+	while (toWrite > 0){
+		if ((n=write(sldFifoFd,&p[haveWritten],toWrite))==-1){
+			if (errno == EAGAIN) ++againError;
+			else {
+				logMessage(stderr,__FUNCTION__,__LINE__,
+				"TFB write %s %ld %ld",
+				strerror(errno),toWrite,haveWritten);
+			}
+			continue;
+		}
+		noWriteError++;
+		toWrite -= n;
+		haveWritten += n;
+	}
+	sldFifoFailRate=(double)againError/(double)noWriteError;
+	if (sldFifoFailRate>1) logMessage(stderr,__FUNCTION__,__LINE__,
+			"TFB sldFifoFailRate=%g",
+			sldFifoFailRate);
+}
+size_t obsSent=0;
 double pddFifoFailRate[NFIFOS];
 double prdFifoFailRate=0;
 void toPrdFifo(nodeCwCnt *item){
@@ -93,7 +136,6 @@ void toPrdFifo(nodeCwCnt *item){
 			"TFB prdFifoFailRate=%g",
 			prdFifoFailRate);
 }
-size_t obsSent=0;
 void toPddFifo(pddObs *item,size_t N){
 	int n;
 	size_t toWrite,haveWritten;
@@ -130,6 +172,9 @@ void toPddFifo(pddObs *item,size_t N){
 	}
 	++obsSent;
 }
+void sldDetectorInsert(sldObs *data){
+	toSldFifo(data);
+}
 void prdDetectorInsert(nodeCwCnt *data){
 	toPrdFifo(data);
 }
@@ -137,6 +182,29 @@ size_t getFifo(uint16_t port){
 	return(port % NFIFOS);
 }
 extern nodeCwCnt *getNC(in_addr_t IP,uint32_t Port);
+sldObs SLDOBS;
+void initSldObs(){
+	SLDOBS.x=0;
+	SLDOBS.lastOutputTime=0;
+}
+void handleSLDObs(double obsTime,in_addr_t serverIP,uint32_t serverPort,in_addr_t clientIP,uint16_t clientPort){
+	long long unsigned int now = obsTime*1000;
+	if (SLDOBS.lastOutputTime == 0) SLDOBS.lastOutputTime=now;
+	long long unsigned int d = now - SLDOBS.lastOutputTime;
+	if ((SLDOBS.x==NSLDOBS)||(d>SLDOBSTIME)){
+		SLDOBS.lastOutputTime=now;
+		sldDetectorInsert(&SLDOBS);
+		SLDOBS.x=0;
+	}
+	SLDOBS.o[SLDOBS.x].serverIP=serverIP;
+	SLDOBS.o[SLDOBS.x].serverPort=serverPort;
+	SLDOBS.o[SLDOBS.x].clientIP=clientIP;
+	SLDOBS.o[SLDOBS.x].clientPort=clientPort;
+	SLDOBS.o[SLDOBS.x].pTime=obsTime;
+	++SLDOBS.x;
+	return;
+}
+
 void handlePRDObs(double obsTime,in_addr_t serverIP,uint32_t serverPort,uint8_t flag,int8_t direction){
 	long long unsigned int now = obsTime*1000;
 	nodeCwCnt *nc=getNC(serverIP,serverPort);
@@ -202,6 +270,28 @@ void handlePRDObs(double obsTime,in_addr_t serverIP,uint32_t serverPort,uint8_t 
 	}
 	return;
 }
+#define CLEARTIME 5
+void clearFifos(){
+	static long long unsigned int lastClear=0;
+	if (lastClear == 0) lastClear = getPddObsTime();
+	if ((getPddObsTime()-lastClear)<CLEARTIME) return;
+	for(size_t FIFON=0;FIFON<NFIFOS;++FIFON){
+		unsigned long long int deltaTime;
+		pddObs *t;
+		bucket *b;
+		b=&B[FIFON];
+		t=&b->p;
+		if (t->pddObsX==0) continue;
+		if (t->timeStamp==0) continue;
+		deltaTime=getPddObsTime()-t->timeStamp;
+		if (deltaTime > MAXOBSTIME){
+			t->bucket=FIFON;
+			toPddFifo(t,t->bucket);
+			t->pddObsX=0;
+			t->timeStamp=getPddObsTime();
+		}
+	}
+}
 void handlePDDObs(in_addr_t serverIP,in_addr_t clientIP,uint32_t serverPort, uint32_t clientPort,uint8_t flag,int8_t direction){
 	unsigned long long int deltaTime;
 	size_t FIFON;
@@ -212,6 +302,14 @@ void handlePDDObs(in_addr_t serverIP,in_addr_t clientIP,uint32_t serverPort, uin
 	FIFON=getFifo(pi);
 	b=&B[FIFON];
 	t=&b->p;
+	if (t->timeStamp==0) t->timeStamp=getPddObsTime();
+	deltaTime=getPddObsTime()-t->timeStamp;
+	if (deltaTime > MAXOBSTIME){
+		t->bucket=FIFON;
+		toPddFifo(t,t->bucket);
+		t->pddObsX=0;
+		t->timeStamp=getPddObsTime();
+	}
 	t->pd[t->pddObsX].clientIP=clientIP;
 	t->pd[t->pddObsX].clientPort=pi;
 	t->pd[t->pddObsX].serverIP=serverIP;
@@ -219,15 +317,15 @@ void handlePDDObs(in_addr_t serverIP,in_addr_t clientIP,uint32_t serverPort, uin
 	t->pd[t->pddObsX].cw=flag;
 	t->pd[t->pddObsX].direction=direction;
 	++t->pddObsX;
-	if (t->timeStamp==0) t->timeStamp=msecTime();
-	deltaTime=msecTime()-t->timeStamp;
 	if ((t->pddObsX<MAXOBS) && (deltaTime < MAXOBSTIME)){
+		clearFifos();
 		return;
 	}
-	t->timeStamp=msecTime();
+	t->timeStamp=getPddObsTime();
 	t->bucket=FIFON;
 	toPddFifo(t,t->bucket);
 	t->pddObsX=0;
+	clearFifos();
 }
 void flushBuckets(){
 	pddObs *t;
@@ -236,7 +334,7 @@ void flushBuckets(){
 		b=&B[i];
 		t=&b->p;
 		if (t->pddObsX != 0){
-			t->timeStamp=msecTime();
+			t->timeStamp=getPddObsTime();
 			t->bucket=i;
 			toPddFifo(t,t->bucket);
 			t->pddObsX=0;

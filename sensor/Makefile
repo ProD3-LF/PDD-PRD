@@ -16,6 +16,7 @@
 # * Approved for Public Release, Distribution Unlimited
 # *
 # * DISTAR Case 38846, cleared November 1, 2023
+# * DISTAR Case 39809, cleared May 22, 2024
 # *
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
@@ -35,6 +36,9 @@ CFLAGS=\
 -fstack-protector \
 -DFORTIFY_SOURCE=2 \
 -fno-common
+
+LDFLAGS= -lm
+
 INCLUDES = \
 -I. \
 -I..
@@ -42,7 +46,7 @@ INCLUDES = \
 CC = gcc
 
 tcpdumpSensor: tcpdumpSensor.o sensorUtil.o parseTcp.o queue.o ../common/config.o ../common/pddObs.h ../common/logMessage.o ../common/util.o
-	$(CC) $(CFLAGS) -static tcpdumpSensor.o -o tcpdumpSensor sensorUtil.o parseTcp.o queue.o ../common/config.o ../common/logMessage.o ../common/util.o
+	$(CC) $(CFLAGS) -static tcpdumpSensor.o -o tcpdumpSensor sensorUtil.o parseTcp.o queue.o ../common/config.o ../common/logMessage.o ../common/util.o $(LDFLAGS)
 
 ../common/logMessage.o: ../common/logMessage.c
 	cd ../common && $(CC) $(CFLAGS) -c ../common/logMessage.c

@@ -16,6 +16,7 @@
  * Approved for Public Release, Distribution Unlimited
  *
  * DISTAR Case 38846, cleared November 1, 2023
+ * DISTAR Case 39809, cleared May 22, 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,23 +28,36 @@
 #define MAXSERVER 10
 extern void flushBuckets();
 extern void closeFifos();
+extern void handleSLDObs(double obsTime,in_addr_t serverIP,uint32_t serverPort,in_addr_t clientIP,uint16_t clientPort);
 extern void handlePDDObs(in_addr_t serverIP,in_addr_t clientIP,uint32_t serverPort, uint32_t clientPort,uint8_t flag,int8_t direction);
 extern void handlePRDObs(double obsTime,in_addr_t serverIP,uint32_t serverPort,uint8_t flag,int8_t direction);
 extern void initBucket();
+extern bool knownSldServer(uint16_t p,in_addr_t ip);
 extern bool knownPrdServer(uint16_t p,in_addr_t ip);
 extern bool knownPddServer(uint16_t p,in_addr_t ip);
 extern long long unsigned int msecTime();
 extern void initFifos();
+extern void initSldObs();
 extern void pddConfig();
 extern void prdConfig();
+extern void sldConfig();
 extern void setupNC();
-extern int parseTcpLine(char *b,double *obsTime,in_addr_t *serverPDDIP,
-                in_addr_t *clientPDDIP,unsigned int *serverPDDPort,
-                unsigned int *clientPDDPort, in_addr_t *serverPRDIP,
-                unsigned int *serverPRDPort,
-                uint8_t *flag,int8_t *direction);
+extern int parseTcpLine(char *b,double *obsTime,
+		in_addr_t *serverPDDIP,
+		in_addr_t *clientPDDIP,
+		unsigned int *serverPDDPort,
+		unsigned int *clientPDDPort,
+		in_addr_t *serverPRDIP,
+		unsigned int *serverPRDPort,
+		in_addr_t *serverSLDIP,
+		in_addr_t *clientSLDIP,
+		unsigned int *serverSLDPort,
+		unsigned int *clientSLDPort,
+	       	uint8_t *flag,int8_t *direction);
 extern int parseTcpLinePrd(char *b,double *obsTime,in_addr_t *serverIP,
 	unsigned int *serverPort,uint8_t *flag, int8_t *direction);
 extern int parseTcpLinePdd(char *b,double *obsTime,in_addr_t *serverIP,in_addr_t *clientIP,
 	unsigned int *serverPort,unsigned int *clientPort,uint8_t *flag,
 	int8_t *direction);
+extern void updatePddObsTime(double t);
+extern long long unsigned int getPddObsTime();

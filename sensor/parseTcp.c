@@ -16,6 +16,7 @@
  * Approved for Public Release, Distribution Unlimited
  *
  * DISTAR Case 38846, cleared November 1, 2023
+ * DISTAR Case 39809, cleared May 22, 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,10 +52,17 @@ uint8_t tcpFlagsToInt(char *f){
 }
 
 
-int parseTcpLine(char *b,double *obsTime,in_addr_t *serverPDDIP,
-		in_addr_t *clientPDDIP,unsigned int *serverPDDPort,
-		unsigned int *clientPDDPort, in_addr_t *serverPRDIP,
+int parseTcpLine(char *b,double *obsTime,
+		in_addr_t *serverPDDIP,
+		in_addr_t *clientPDDIP,
+		unsigned int *serverPDDPort,
+		unsigned int *clientPDDPort,
+		in_addr_t *serverPRDIP,
 		unsigned int *serverPRDPort,
+		in_addr_t *serverSLDIP,
+		in_addr_t *clientSLDIP,
+		unsigned int *serverSLDPort,
+		unsigned int *clientSLDPort,
 	       	uint8_t *flag,int8_t *direction){
 	size_t t,i;
 	char ip1S[512],ip2S[512],flagS[32];
@@ -62,7 +70,7 @@ int parseTcpLine(char *b,double *obsTime,in_addr_t *serverPDDIP,
 	struct in_addr ip1,ip2;
 	if (sscanf(b,"%lg IP %s > %s Flags [%s]",obsTime,ip1S,ip2S,flagS)!=4){
 		logMessage(stderr,__FUNCTION__,__LINE__,"Cannot parse: %s",b);
-		exit(-1);
+		return(-1);
 	}
 	t=strlen(flagS)-1;
 	if ((flagS[t]!=',') || (flagS[t-1]!=']')){
@@ -129,7 +137,7 @@ int parseTcpLine(char *b,double *obsTime,in_addr_t *serverPDDIP,
 		*serverPRDIP=ip1.s_addr;
 		*serverPRDPort=port1;
 	}
-	else if (knownPddServer(port2,ip2.s_addr)){
+	else if (knownPrdServer(port2,ip2.s_addr)){
 		*direction=Received;
 		*serverPRDIP=ip2.s_addr;
 		*serverPRDPort=port2;
@@ -137,6 +145,26 @@ int parseTcpLine(char *b,double *obsTime,in_addr_t *serverPDDIP,
 	else{
 	       	logMessage(stderr,__FUNCTION__,__LINE__,
 			"%s.%d no known PRD server in %s",
+			b);
+		return(-1);
+	}
+	if (knownSldServer(port1,ip1.s_addr)){
+		*direction=Sent;
+		*serverSLDIP=ip1.s_addr;
+		*clientSLDIP=ip2.s_addr;
+		*serverSLDPort=port1;
+		*clientSLDPort=port2;
+	}
+	else if (knownSldServer(port2,ip2.s_addr)){
+		*direction=Received;
+		*serverSLDIP=ip2.s_addr;
+		*clientSLDIP=ip1.s_addr;
+		*serverSLDPort=port2;
+		*clientSLDPort=port1;
+	}
+	else{
+	       	logMessage(stderr,__FUNCTION__,__LINE__,
+			"%s.%d no known SLD server in %s",
 			b);
 		return(-1);
 	}

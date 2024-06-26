@@ -16,6 +16,7 @@
 # * Approved for Public Release, Distribution Unlimited
 # *
 # * DISTAR Case 38846, cleared November 1, 2023
+ * DISTAR Case 39809, cleared May 22, 2024
 # *
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.

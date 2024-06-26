@@ -16,6 +16,7 @@
  * Approved for Public Release, Distribution Unlimited
  *
  * DISTAR Case 38846, cleared November 1, 2023
+ * DISTAR Case 39809, cleared May 22, 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +37,7 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <math.h>
 #include "defs.h"
 #include "../common/pddObs.h"
 #include "../common/prdObs.h"
@@ -47,6 +49,27 @@ static nodeCwCnt NC[NSERVD];
 static size_t NCX=0;
 extern int pddFifoFd[NFIFOS];
 extern int prdFifoFd;
+static long long unsigned int pddObsTime=0;
+void updatePddObsTime(double t){
+	long long unsigned int c=ceil(t*1000);
+	if (c > pddObsTime) pddObsTime=c;
+}
+long long unsigned int getPddObsTime(){
+	return(pddObsTime);
+}
+
+void initSldFifo(){
+	char fifoName[80];
+	sprintf(fifoName,"/tmp/SLDFifo");
+	if (prdFifoFd== 0){
+		if (mkfifo(fifoName, 0666)==-1){
+			logMessage(stderr,__FUNCTION__,__LINE__,
+					"mkfifo(%s) failed %s",
+					fifoName,strerror(errno));
+		}
+	}
+	sleep(1); //give time for fifos to get ready
+}
 void initPrdFifo(){
 	char fifoName[80];
 	sprintf(fifoName,"/tmp/PRDFifo");
@@ -76,6 +99,9 @@ void initPddFifos(){
 	//as needed when writing to them.
 }
 
+uint16_t knownSldServerPort[MAXSERVER];
+in_addr_t knownSldServerIP[MAXSERVER];
+size_t knownSldServerN=0;
 uint16_t knownPddServerPort[MAXSERVER];
 in_addr_t knownPddServerIP[MAXSERVER];
 size_t knownPddServerN=0;
@@ -83,6 +109,13 @@ size_t knownPddServerN=0;
 uint16_t knownPrdServerPort[MAXSERVER];
 in_addr_t knownPrdServerIP[MAXSERVER];
 size_t knownPrdServerN=0;
+bool knownSldServer(uint16_t p,in_addr_t ip){
+	for(size_t i=0;i<knownSldServerN;++i){
+		if ((knownSldServerPort[i]==p) && (knownSldServerIP[i]==ip))
+			return(true);
+	}
+	return false;
+}
 bool knownPrdServer(uint16_t p,in_addr_t ip){
 	for(size_t i=0;i<knownPrdServerN;++i){
 		if ((knownPrdServerPort[i]==p) && (knownPrdServerIP[i]==ip))
@@ -97,6 +130,10 @@ bool knownPddServer(uint16_t p,in_addr_t ip){
 			return(true);
 	}
 	return false;
+}
+void addKnownSldServer(uint16_t p,in_addr_t ip){
+	knownSldServerPort[knownSldServerN]=ntohs(p);
+	knownSldServerIP[knownSldServerN++]=ip;
 }
 void addKnownPddServer(uint16_t p,in_addr_t ip){
 	knownPddServerPort[knownPddServerN]=ntohs(p);
@@ -168,6 +205,43 @@ void setupPrdServers(char *s){
 	logMessage(stderr,__FUNCTION__,__LINE__,"Servers are set up");
 }
 
+void setupSldServers(char *s){
+	size_t n=strlen(s);
+	char *t=s;
+	in_addr_t ip;
+	uint16_t port;
+	for(size_t i=0;i<n;++i){
+		size_t j;
+		if (s[i]==':'){
+			s[i]='\0';
+			ip=inet_addr(t);
+			port=atoi(&s[i+1]);
+			addKnownSldServer(port,ip);
+			s[i]=':';
+			for(j=i+1;j<n;++j){
+				if (s[j] == ' ') break;
+			}
+			i=j;
+			t=&s[j+1];
+		}
+	}
+	logMessage(stderr,__FUNCTION__,__LINE__,"Servers are set up");
+}
+	
+void sldConfig(){
+	char *t=0;
+	FILE *configFile;
+	if ((configFile=fopen(CONFIGFILE,"r+"))==0){
+		logMessage(stderr,__FUNCTION__,__LINE__,
+				"cannot open %s",CONFIGFILE);
+		exit(-1);
+	}
+	if ((t=get_config_string(configFile,"sldservers"))==0){
+		logMessage(stderr,__FUNCTION__,__LINE__,"no servers in configFile");
+		exit(-1);
+	}
+	setupSldServers(t);
+}
 void setupPddServers(char *s){
 	size_t n=strlen(s);
 	char *t=s;
@@ -220,5 +294,7 @@ void pddConfig(){
 	setupPddServers(t);
 	initPddFifos();
 	initPrdFifo();
+	initSldFifo();
+	initSldObs();
 	initBucket();
 }
