@@ -1,0 +1,57 @@
+#/* SPDX-License-Identifier: Apache-2.0 */
+#/* Copyright (c) 2012-2023 Applied Communication Sciences
+#* (now Peraton Labs Inc.)
+#*
+#* This software was developed in work supported by the following U.S.
+#* Government contracts:
+#*
+#* HR0011-20-C-0160 HR0011-16-C-0061
+#*
+#*
+#* Any opinions, findings and conclusions or recommendations expressed in
+#* this material are those of the author(s) and do not necessarily reflect
+#* the views, either expressed or implied, of the U.S. Government.
+#*
+#* DoD Distribution Statement A
+#* Approved for Public Release, Distribution Unlimited
+#*
+#* DISTAR Case 39809, cleared May 22, 2024 
+#*
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#* http://www.apache.org/licenses/LICENSE-2.0
+#*/
+F1 {
+MEM -1 200
+}
+F2 {
+HIGH:total_flow_rate -1 1
+LOW:total_flow_rate -1 1
+HIGH:total_percent_cpu_util -1 1
+LOW:total_percent_cpu_util -1 1
+}
+F3 {
+HIGH:total_percent_cpu_util -1 1
+slowflow -1 1
+}
+F4 {
+HIGH:total_flow_rate -1 1
+slowflow -1 1
+}
+F6 {
+LOW:total_flow_rate -1 1
+slowflow -1 1
+}
+F7 {
+slowflow -1 1
+MEM -1 1
+}
+F8 {
+CPU -1 1
+SIPANOM -1 10
+}
+F9 {
+SIPANOM -1 50
+}
