@@ -24,5 +24,6 @@
 # * http://www.apache.org/licenses/LICENSE-2.0
 # */
 rm -rf /tmp/PDDFifo*
+rm -rf /tmp/CORRELATORPDDFifo
 export LD_LIBRARY_PATH=.
 ./tstPdd

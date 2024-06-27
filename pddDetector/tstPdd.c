@@ -29,6 +29,13 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+extern void initAlertCorr();
+extern 	void flushAlertsCorr();
+extern 	void closeAlertCorr();
+extern 	void sendOverFlowAlertCorr();
+extern 	void sendPddAlertCorr(uint32_t serverIP,uint32_t serverPort,
+			uint32_t clientIP, uint16_t clientPort,
+			enum SCalert type,int v[],int n);
 extern void initAlert();
 extern 	void flushAlert();
 extern 	void closeAlert();
@@ -38,10 +45,10 @@ extern 	void sendPddAlert(uint32_t serverIP,uint32_t serverPort,
 			enum SCalert type,int v[],int n);
 int main(){
 	callBacks c;
-	c.initAlert = &initAlert;
-	c.flushAlert = &flushAlerts;
-	c.sendAlert = &sendPddAlert;
-	c.sendAlert = &sendPddAlert;
+	c.initAlert = &initAlertCorr;
+	c.flushAlert = &flushAlertsCorr;
+	c.sendAlert = &sendPddAlertCorr;
+	c.sendAlert = &sendPddAlertCorr;
 	c.sendOverflowAlert = &sendOverFlowAlert;
 	pddMain(&c);
 }

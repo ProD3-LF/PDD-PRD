@@ -45,6 +45,7 @@ struct scModel_
   scVector v[];
 } typedef scModel;
 #define MAXSCVEC 20
+#define MINSCSTARTVEC 10
 extern scModel *TCPMODEL[MAXSCVEC+1];
 extern scModel *TCPSTARTMODEL[MAXSCVEC+1];
 #pragma pack(pop)

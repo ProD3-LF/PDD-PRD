@@ -206,7 +206,7 @@ void pddMain(callBacks *c) {
 		"\e[4m\e[1m             PDD DETECTOR             \e[m\n");
 	fprintf(stdout, "%10s %10s %10s\n","TIME","OBSIN","ANOMALIES");
 	for(int i=0;i<SIGSYS;++i){
-		if (i!=SIGSEGV) signal(i,handleSig);
+		if ((i!=SIGSEGV) || (i!=SIGCONT)) signal(i,handleSig);
 	}
 	for(size_t i=0;i<NFIFOS;++i){
 		char fifoName[PATH_MAX];

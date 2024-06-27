@@ -53,16 +53,17 @@
 #include <unistd.h>
 char hostName[HOST_NAME_MAX];
 time_t startTime=0;
-time_t obsStartTime=0;
+unsigned long long int obsStartTime=0;
 FILE *ssvFile=0;
 FILE *gFile=0;
+static long long unsigned lastTimeStamp=0;
 int coreCoefficient[MAXCW*2][MAXCW*2];
 //#define NSDINCR 50000
 #define NSDINCR 2
 struct {
 	uint32_t client;
 	uint16_t clientPort;
-	time_t lastPacket;
+	long long unsigned int lastPacket;
 	pddDetector d;
 } typedef sessionData;
 struct {
@@ -131,6 +132,12 @@ void auditSession(sessionData *sd, long long unsigned int now){
 	if (sd->d.idle==true){
 	       	return;
 	}
+	if (now < sd->lastPacket){
+		logMessage(stderr,__FUNCTION__,__LINE__,
+				"BACKWARD %08x.%d %llu %llu",
+		ntohl(sd->client),sd->clientPort,now,sd->lastPacket);
+		return;
+	}
 	if ((now-sd->lastPacket)<TCPIDLETIME) {
 		return;
 	}
@@ -138,11 +145,14 @@ void auditSession(sessionData *sd, long long unsigned int now){
 		logMessage(stderr,__FUNCTION__,__LINE__,"interrupted start sequence");
 	}
 	sd->d.idle=true;
-	if ((sd->d.nScs<MAXSCVEC) && (sd->d.nScs==sd->d.uninterruptedCWCount)){
+	if ((sd->d.nScs<MINSCSTARTVEC) && (sd->d.nScs==sd->d.uninterruptedCWCount)){
 		(*SENDALERT)(sd->d.serverIP,sd->d.serverPort,sd->d.clientIP,
 			sd->d.clientPort,SC_START_SHORT,
 			&sd->d.detectVec_[sd->d.detectVecI_-MAXSCVEC],
 			sd->d.nScs);
+		logMessage(stderr,__FUNCTION__,__LINE__,
+		"SHORT %d %08x.%d %llu %llu %llu",sd->d.nScs,
+		ntohl(sd->client),sd->clientPort,now,sd->lastPacket,now-sd->lastPacket);
 		return;
 	}
 	logMessage(stderr,__FUNCTION__,__LINE__,"ABANDONED %08x.%d %llu %llu",
@@ -155,16 +165,16 @@ void auditServer(serverData *sd, long long unsigned int now){
 		}
 	}
 }
-void audit(long long unsigned int obsTime,long long unsigned int now){
+void audit(long long unsigned int obsTime){
 	static long long unsigned lastAuditTime=0;
 	if (lastAuditTime==0){
-		lastAuditTime=now;
+		lastAuditTime=obsTime;
 	}
-	if ((now-obsTime)<TCPIDLETIME){return;}
+	if ((obsTime-lastAuditTime)<TCPIDLETIME){return;}
 	for (size_t i=0;i<SERVDX;++i){
 		auditServer(&SERVD[i],obsTime);
 	}
-	lastAuditTime=msecTime();
+	lastAuditTime=obsTime;
 }
 #define HIGH 0
 #define MED 1
@@ -250,7 +260,7 @@ sessionData *insertSessionData(int rc,int m, uint32_t server,
 		sd->DSX[clientPort]++;
 		sd->SD[clientPort][m]->client=client;
 		sd->SD[clientPort][m]->clientPort=clientPort;
-		sd->SD[clientPort][m]->lastPacket = (time_t)obsTime;
+		sd->SD[clientPort][m]->lastPacket = obsTime;
 		return(sd->SD[clientPort][m]);
 	}
 	for(int i=sd->DSX[clientPort];i>m+1;--i){
@@ -259,7 +269,7 @@ sessionData *insertSessionData(int rc,int m, uint32_t server,
 	sd->SD[clientPort][m+1]=t;
 	sd->SD[clientPort][m+1]->client=client;
 	sd->SD[clientPort][m+1]->clientPort=clientPort;
-	sd->SD[clientPort][m+1]->lastPacket = (time_t)obsTime;
+	sd->SD[clientPort][m+1]->lastPacket = obsTime;
 	sd->DSX[clientPort]++;
 	return(sd->SD[clientPort][m+1]);
 }
@@ -283,7 +293,7 @@ sessionData *findOrAddSessionData(uint32_t server,uint16_t serverPort,
 		}
 		sd->SD[clientPort][0]->client=client;
 		sd->SD[clientPort][0]->clientPort=clientPort;
-		sd->SD[clientPort][0]->lastPacket = (time_t)obsTime;
+		sd->SD[clientPort][0]->lastPacket = obsTime;
 		sd->DSX[clientPort]++;
 		initPddDetector(&sd->SD[clientPort][0]->d,server,serverPort,
 				client,clientPort,obsTime);
@@ -298,7 +308,7 @@ sessionData *findOrAddSessionData(uint32_t server,uint16_t serverPort,
 				client,clientPort,m,sd->DSX[clientPort]);
 		}
 		if ((rc=unsignedComp(client,sd->SD[clientPort][m]->client))==0){
-			sd->SD[clientPort][m]->lastPacket = (time_t)obsTime;
+			sd->SD[clientPort][m]->lastPacket = obsTime;
 			return(sd->SD[clientPort][m]);
 		}
 		if (rc < 0) {
@@ -406,14 +416,16 @@ void processTcp(pddObs *p){
 	static long long unsigned int ptime=0;
 	static size_t nObs=0;
 	time_t now=msecTime();
+	if (obsStartTime==0) obsStartTime=p->timeStamp;
+	if (lastTimeStamp < p->timeStamp) lastTimeStamp=p->timeStamp;
 	++nObs;
 	if ((adRecord==false) && (adDetect==false)){return;}
 	adjSample(p->sample,p->bucket,p->timeStamp);
-	clearOldSessionData(now);
+	clearOldSessionData(lastTimeStamp);
 	for(size_t i=0;i<p->pddObsX;++i){
 		processObs(&p->pd[i],p->timeStamp,p->bucket);
 	}
 	(*FLUSHALERT)(now);
-	audit(p->timeStamp,now);
+	audit(lastTimeStamp);
 	ptime+=(msecTime()-p->timeStamp);
 }

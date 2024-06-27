@@ -53,7 +53,6 @@ static FILE *threadObsFd[NFIFOS];
 void flushThreadObsFd(){
 	if (adRecord==0) return;
 	for(size_t i=0;i<NFIFOS;++i){
-		logMessage(stderr,__FUNCTION__,__LINE__,"flushed %lu",i);
 		fflush(threadObsFd[i]);
 	}
 }
@@ -82,6 +81,7 @@ void shiftVec(pddDetector *d){
 	for(int i=0;i<MAXSCVEC-1;++i){d->detectVec_[i] = d->detectVec_[i+1];}
 	d->detectVecI_=MAXSCVEC-1;
 }
+extern unsigned long long int obsStartTime;
 extern void reusePddDetector(pddDetector *d,int cw,long long unsigned int now);
 void checkForReuse(long long unsigned int now,pddDetector *d,int cw){
 	//if already marked as abandoned, just reuse it
@@ -94,12 +94,17 @@ void checkForReuse(long long unsigned int now,pddDetector *d,int cw){
 	//The session has been idle a long time.
 	//If the prior session has not completed the start sequence
 	//issue an alert since many attacks cause the start sequence to fail.
-	if (d->nScs < MAXSCVEC){
+	if (d->nScs < MINSCSTARTVEC){
 		NGRAMSSTARTSHORT++;
 		(*SENDALERT)(d->serverIP,d->serverPort,d->clientIP,
 			d->clientPort, SC_START_SHORT,
 			&d->detectVec_[d->detectVecI_-d->nScs],
 			d->nScs);
+		logMessage(stderr,__FUNCTION__,__LINE__,
+		"SHORT: %llu %llu %d %llu %d %08x:%d %08x:%d",
+		now,d->lastCwTime,cw,now-d->lastCwTime,d->nScs,ntohl(d->serverIP),
+		ntohs(d->serverPort),ntohl(d->clientIP),ntohs(d->clientPort));
+
 	}
 	//If the new CW is one that starts a new session
 	//assume the client is reusing the client port for a new session
@@ -123,12 +128,19 @@ void processCW(pddDetector *d, int cw,
 		size_t bucket) {
 	static time_t lastSsvUpdate=0;
 	int lowestAnomAlert=MAXSCVEC+1;
+	static bool inWarmUp=true;
 	d->nScs++;
 	d->uninterruptedCWCount++;
 	d->detectVec_[d->detectVecI_++]=cw;
-	d->lastCwTime=obsTime;
 	checkForReuse(obsTime,d,cw);
+	d->lastCwTime=obsTime;
 	++CWIN;
+	if (inWarmUp==true){
+		if ((obsTime-obsStartTime)>WARMUP){
+			inWarmUp=false;
+			logMessage(stderr,__FUNCTION__,__LINE__,"leaving warmup");
+		}
+	}
 	if ((d->nScs<=MAXSCVEC) && (d->nScs==d->uninterruptedCWCount)){
 		for(int i=d->nScs;i<=MAXSCVEC;++i){
 			if (i>d->nScs){break;}
@@ -141,7 +153,7 @@ void processCW(pddDetector *d, int cw,
 				break;
 			case SC_POL_ANOMALOUS:
 				++NGRAMSSTARTANOM;
-				if (adRecord == true){
+				if ((adRecord == true) && (inWarmUp == false)){
 					learnSequence(d,i,bucket,"START");}
 				if (i<lowestAnomAlert){
 					(*SENDALERT)(d->serverIP,d->serverPort,
@@ -153,7 +165,7 @@ void processCW(pddDetector *d, int cw,
 				break;
 			case SC_POL_ALIEN:
 				++NGRAMSSTARTALIEN;
-				if (adRecord == true){
+				if ((adRecord == true) && (inWarmUp == false)){
 					learnSequence(d,i,bucket,"START");}
 				(*SENDALERT)(d->serverIP,d->serverPort,
 					d->clientIP,d->clientPort,
@@ -235,5 +247,6 @@ void processCW(pddDetector *d, int cw,
 		fflush(gFile);
 		fflush(stdout);
 		fflush(ssvFile);
+		(*FLUSHALERT)();
 	}
 }

@@ -73,5 +73,6 @@ extern void initAlert();
 extern void closeAlert();
 extern bool adDetect,adRecord;
 extern void addKnownServer(uint16_t p,in_addr_t ip);
+#define WARMUP 300000
 
 #endif
