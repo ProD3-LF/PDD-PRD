@@ -24,9 +24,20 @@
 # * http://www.apache.org/licenses/LICENSE-2.0
 # */
 rm -rf /tmp/go
+rm -rf $2
+rm -rf /tmp/timeWarp.csv
 rm -rf /tmp/PDDG
+rm -rf /tmp/PRDG
+rm -rf /tmp/CORRELATOR*Fifo
+rm -rf /tmp/CORRELATORG
 rm -rf /tmp/PDDFifo*
 rm -rf /tmp/PRDFifo*
+rm -rf /tmp/SLDFifo*
+rm -rf /tmp/GUILTY
+pkill -9 tstPdd
+pkill -9 tstPrd
+pkill -9 tstCorr
+pkill -9 tcpdumpSensor
 FN1=lucidasanstypewriter-bold-18
 FN2=lucidasanstypewriter-bold-14
 FN3=lucidasanstypewriter-bold-24
@@ -37,27 +48,45 @@ then
 else
 	SENSORARGS="--pcapFile ${PWD}/$1"
 fi
+if test "${2}" == ""
+then
+	echo "specify directory for results"
+fi
 rm -rf stop /tmp/PDDALERTS /tmp/PRDALERTS
 touch /tmp/PDDALERTS /tmp/PRDALERTS
-xterm -geometry 80x12+480+0 -title "PRD alert display" -fn $FN4 -e "tail -s 1 -F /tmp/PRDALERTS | tools/prdAlertDisplay" &
+xterm -geometry 80x12+476+0 -title "PRD alert display" -fn $FN4 -e "tail -s 1 -F /tmp/PRDALERTS | tools/prdAlertDisplay" &
 echo "kill $!" >> stop
 chmod 777 stop
-xterm -geometry 80x12+480+200 -title "PDD alert display" -fn $FN4 -e "tail -s 1 -F /tmp/PDDALERTS | tools/pddAlertDisplay" &
+xterm -geometry 80x12+476+200 -title "PDD alert display" -fn $FN4 -e "tail -s 1 -F /tmp/PDDALERTS | sed -e "s/ANOM.*$/ANOM/" | tools/pddAlertDisplay" &
 echo "kill $!" >> stop
 xterm -geometry 39x4+0+100 -title "PDD DETECTOR" -fn $FN2  -e bash -c "cd pddDetector && ./startPddDetector 2>/tmp/pddDetector.err" &
-#echo "kill $!" >> stop
+echo "kill $!" >> stop
+echo "pkill -9 tstPdd" >> stop
+xterm -geometry 39x4+0+300 -title "SLD DETECTOR" -fn $FN2 -e bash -c "cd sldDetector && ./startSldDetector 2>/tmp/sldDetector.err" &
+echo "kill -9 $!" >> stop
+echo "pkill -9 tstSld" >> stop
+sleep 1
 xterm -geometry 39x4+0+200 -title "PRD DETECTOR" -fn $FN2 -e bash -c "cd prdDetector && ./startPrdDetector 2>/tmp/prdDetector.err" &
 echo "kill -9 $!" >> stop
-echo "pkill -9 prdDetector" >> stop
+echo "pkill -9 tstPrd" >> stop
 sleep 1
-xterm  -geometry 70x30+575+425 -fn $FN4 -e "tail -s 1 -F /tmp/PRDG | ttyplot/ttyplot -E '*' -M 1 -t 'PRD Alerts Per Second' -c '*'" &
-echo "kill $!" >> stop
-xterm  -geometry 70x30+0+425 -fn $FN4 -e "tail -s 1 -F /tmp/PDDG | ttyplot/ttyplot -E '*' -M 1 -t 'PDD Alerts Per Second' -c '*'" &
+xterm -geometry 39x4+0+400 -title "CORRELATOR" -fn $FN2 -e bash -c "cd correlation && ./startCorrelator 2>/tmp/correlator.err" &
+echo "kill -9 $!" >> stop
+echo "pkill -9 tstCorrelator" >> stop
+xterm  -geometry 70x20+1133+515 -fn $FN4 -e "tail -s 1 -F /tmp/CORRELATORG | ttyplot/ttyplot -E '*' -M 1 -t 'CORRELATOR Attacks Per Second' -c '*'" &
 echo "kill $!" >> stop
 sleep 1
-xterm -geometry 39x3+0+0 -title "SENSOR" -fn $FN2 -e bash -c "cd sensor && ./tcpdumpSensor --speedFactor 1 ${SENSORARGS} 2> /tmp/sensor.stderr" &
+xterm  -geometry 70x20+567+515 -fn $FN4 -e "tail -s 1 -F /tmp/PRDG | ttyplot/ttyplot -E '*' -M 1 -t 'PRD Alerts Per Second' -c '*'" &
 echo "kill $!" >> stop
-sleep 10
+xterm  -geometry 70x20+0+515 -fn $FN4 -e "tail -s 1 -F /tmp/PDDG | ttyplot/ttyplot -E '*' -M 1 -t 'PDD Alerts Per Second' -c '*'" &
+echo "kill $!" >> stop
+sleep 2
+xterm  -geometry 40x29+1125+25 -title "ATTACKING CLIENTS" -fn $FN4 -e "tail -s 1 -F /tmp/GUILTY 2>/dev/null | grep Guilty" &
+echo "kill $!" >> stop
+sleep 2
+xterm -geometry 39x3+0+0 -title "SENSOR" -fn $FN2 -e bash -c "cd sensor && ./tcpdumpSensor --speedFactor 3 ${SENSORARGS} 2> /tmp/sensor.stderr" &
+echo "kill $!" >> stop
+sleep 2
 while test `pgrep tcpdumpSensor | wc -l` != 0
 do
         sudo pkill -9 httperf
@@ -79,5 +108,6 @@ done
 ./stop
 sudo rm -rf /tmp/PDDFifo*
 sudo rm -rf /tmp/PRDFifo*
-sudo rm -rf stop /tmp/PDDALERTS /tmp/PRDALERTS
-#sudo sudo rm -rf /tmp/tcpdump.err /tmp/pddDetector.err /tmp/PDDALERTS /tmp/PRD.ssv /tmp/PRDG /tmp/prdDetector.err /tmp/PRDALERTS /tmp/sensor.stderr /tmp/PDD.ssv /tmp/PDDG stop
+mkdir -p $2
+sudo cp /tmp/timeWarp.csv /tmp/SLD.csv /tmp/sldDetector* /tmp/prdDetector* /tmp/pddDetector* /tmp/SLDALERTS /tmp/alertsIn.* /tmp/correlator.* /tmp/PDDALERTS /tmp/PRDALERTS /tmp/classifier.csv $2
+sudo rm -f /tmp/timeWarp.csv /tmp/SLD.csv /tmp/sldDetector* /tmp/prdDetector* /tmp/pddDetector* /tmp/SLDALERTS /tmp/alertsIn.* /tmp/correlator.* /tmp/PDDALERTS /tmp/PRDALERTS /tmp/classifier.csv 
