@@ -24,15 +24,19 @@
 # * http://www.apache.org/licenses/LICENSE-2.0
 # */
 all:
+	cd correlation && make
 	cd sensor && make
 	cd pddDetector && make
 	cd prdDetector && make
+	cd sldDetector && make
 	cd ttyplot && make
 	cd tools && make
 clean:
 	rm -rf *.o
+	cd correlation && make clean
 	cd sensor && make clean
 	cd pddDetector && make clean
+	cd sldDetector && make clean
 	cd prdDetector && make clean
 	cd ttyplot && make clean
 	cd tools && make clean
