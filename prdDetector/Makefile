@@ -46,7 +46,7 @@ INCLUDES = \
 LDLIBS += -lpthread
 LDLIBS += -lm
 prdLib = libpd3_prdDetector.so
-offline = buildCorModel buildStdModel buildZeroModel getPrdParameter
+offline = buildCorModel buildStdModel buildZeroModel getPrdParameter showStdModel
 CC = gcc
 
 
@@ -61,6 +61,7 @@ prdObjects += processTcp.o
 prdObjects += prdAlert.o
 prdObjects += prdUtil.o
 prdObjects += model.o
+prdObjects += history.o
 prdObjects += ../common/flags.o
 prdObjects += ../common/logMessage.o 
 prdObjects += ../common/config.o
@@ -78,6 +79,9 @@ buildCorModelObjects += ../common/logMessage.o
 buildCorModelSources = $(buildCorModelObjects:.o=.c)
 buildStdModelObjects = buildStdModel.o
 buildStdModelSources = $(buildStdModelObjects:.o=.c)
+showStdModelObjects = showStdModel.o
+showStdModelObjects += ../common/flags.o
+showStdModelSources = $(showStdModelObjects:.o=.c)
 buildZeroModelObjects = buildZeroModel.o
 buildZeroModelObjects += ../common/flags.o
 buildZeroModelObjects += ../common/logMessage.o 
@@ -89,6 +93,11 @@ $(prdLib): $(prdObjects)
 
 default: tstDepend prdDepend $(prdLib)
 	prdDepend: .prdDepend
+
+showStdModelDepend: .showStdModelDepend
+.showStdModelDepend: $(showStdModelSources)
+	rm -f "$@"
+	$(CC) $(CFLAGS) -MM $^ > "$@"
 
 buildStdModelDepend: .buildStdModelDepend
 .buildStdModelDepend: $(buildStdModelSources)
@@ -127,6 +136,10 @@ include .getPrdParameterDepend
 include .buildCorModelDepend
 include .buildZeroModelDepend
 include .buildStdModelDepend
+include .showStdModelDepend
+
+showStdModel: $(showStdModelObjects)
+	$(CC) $(CFLAGS) $(showStdModelObjects) -lm -o "$@"
 
 buildStdModel: $(buildStdModelObjects)
 	$(CC) $(CFLAGS) $(buildStdModelObjects) -lm -o "$@"
@@ -150,10 +163,11 @@ clean:
 	rm -f .buildCorModelDepend 
 	rm -f .buildZeroModelDepend 
 	rm -f .buildStdModelDepend 
+	rm -f .showStdModelDepend 
 	rm -f .depend 
 	rm -f tstPrd
 	rm -f $(prdLib)
-	rm -f buildCorModel buildStdModel buildZeroModel getPrdParameter
+	rm -f buildCorModel showStrModel buildStdModel buildZeroModel getPrdParameter showStdModel
 	rm -f *.o
 	rm -f ../common/*.o
 
