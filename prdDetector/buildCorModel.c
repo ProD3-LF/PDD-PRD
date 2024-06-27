@@ -38,7 +38,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-long long COUNT[MAXFILES][MAXCW*2];
+long long **COUNT=0;
 prdModel **tmpModel;
 long long int low=MAXCW*2,high=0;
 int isPRD(const struct dirent *d){
@@ -47,8 +47,12 @@ int isPRD(const struct dirent *d){
 	}
 	return(0);
 }
-void initCwCount(){
-	for (int k=0;k<MAXFILES;++k){for(int i=0;i<MAXCW*2;++i){COUNT[k][i]=0;}}
+void initCwCount(size_t n){
+	COUNT=(long long **)malloc(n*sizeof(long long*));
+	for (size_t k=0;k<n;++k){
+		COUNT[k]=(long long *)malloc(2*MAXCW*sizeof(long long));
+		for(int i=0;i<MAXCW*2;++i){COUNT[k][i]=0;}
+	}
 }
 void addCwCount(int fileNo,long long int cw,long long int count){
 	if (count==0){return;}
@@ -83,8 +87,8 @@ int processInDir(char *inDirName){
 	struct dirent **file=0;
 	int nFiles=scandir(inDirName,&file,isPRD,0);
 	if (nFiles<0){
-		fprintf(stderr,"%s.%d scandir failed with %s\n",
-			__FUNCTION__,__LINE__,strerror(errno));
+		fprintf(stderr,"%s.%d scandir(%s) failed with %s\n",
+			__FUNCTION__,__LINE__,inDirName,strerror(errno));
 		return(-1);
 	}
 	if (nFiles > MAXFILES){
@@ -92,6 +96,7 @@ int processInDir(char *inDirName){
 			__FUNCTION__,__LINE__,MAXFILES,nFiles);
 		 nFiles=MAXFILES;
 	}
+	initCwCount(nFiles);
 	for(int i=0;i<nFiles;++i){
 		processInFile(inDirName,file[i]->d_name);
 		free(file[i]);
@@ -205,7 +210,10 @@ void outputModel(){
 }
 #define TOPERCENT 100
 void calCor(int nFiles){
-	long long X[MAXFILES],Y[MAXFILES];
+	long long *X;
+	long long *Y;
+	X=(long long *)malloc(sizeof(long long)*MAXFILES);
+	Y=(long long *)malloc(sizeof(long long)*MAXFILES);
 	for(long long k=low;k<high;++k){
 		for(long long j=low;j<high;++j){
 			for (int i=0;i<nFiles;++i){
@@ -242,7 +250,6 @@ int main(int argc,char *arv[]){
 			exit(-1);
 		}
 	}
-	initCwCount();
 	int nFiles=processInDir(TMPWORKINGDIR);
 	calCor(nFiles);
 	outputModel();

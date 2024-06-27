@@ -28,6 +28,12 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+extern void initAlertCorr();
+extern void flushAlertsCorr();
+extern void closeAlertCorr();
+extern void sendOverFlowAlertCorr();
+extern void sendPrdAlertCorr(uint32_t serverIP,uint16_t serverPort,
+			char *violation);
 extern void initAlert();
 extern void flushAlerts();
 extern void closeAlert();
@@ -36,9 +42,9 @@ extern void sendPrdAlert(uint32_t serverIP,uint16_t serverPort,
 			char *violation);
 int main(){
 	callBacks c;
-	c.initAlert = &initAlert;
-	c.flushAlert = &flushAlerts;
-	c.sendAlert = &sendPrdAlert;
-	c.closeAlert = &closeAlert;
+	c.initAlert = &initAlertCorr;
+	c.flushAlert = &flushAlertsCorr;
+	c.sendAlert = &sendPrdAlertCorr;
+	c.closeAlert = &closeAlertCorr;
 	prdMain(&c);
 }

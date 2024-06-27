@@ -60,7 +60,7 @@ extern void (*SENDALERT)(uint32_t serverIP,uint16_t serverPort,char *violation);
 #define MAXPORTS 65536
 #define CORETHRESH 50
 #define ZPROBTHRESH 50
-#define MAXFILES 250000
+#define MAXFILES 6000000
 #define NSERVD 2
 #define PRDOBSTIME 500
 #define PRDOBSTIMESLOP (PRDOBSTIME/2)

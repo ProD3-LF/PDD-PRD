@@ -51,10 +51,11 @@ int allZeroRow(int r,int l,int h){
 	}
 	return(0);
 }
+char modelFileName[PATH_MAX]=STOREDSTDMODELFILE;
 int dumpModel(int start, int stop){
 	int lowC=MAXCW*2,highC=0,lowR=MAXCW*2,highR=0;
-        fprintf(stderr,"file is %s\n",STOREDSTDMODELFILE);
-	FILE *modelFile=fopen(STOREDSTDMODELFILE,"re");
+        fprintf(stderr,"file is %s\n",modelFileName);
+	FILE *modelFile=fopen(modelFileName,"re");
         if (modelFile==0){
                 fprintf(stderr,"%s.%d fopen(%s) failed with %s\n",
                         __FUNCTION__,__LINE__,STOREDSTDMODELFILE,strerror(errno));
@@ -81,21 +82,24 @@ int dumpModel(int start, int stop){
 	for(int k=lowC;k<highC;++k){
 		if (inRequestedRange(start,stop,k) == 1){continue;}
 		if (allZeroCol(k,lowR,highR)==0){continue;}
-				fprintf(stderr,",%s",convert(k-MAXCW));
-		//fprintf(stderr,",%d",(k-MAXCW));
+		char cws[512];
+		convertCw((k-MAXCW),cws,512);
+		fprintf(stderr,",%s",cws);
 	}
 	fprintf(stderr,",ALL");
 	fprintf(stderr,"\n");
 	for(int k=lowC;k<highC;++k){
 		if (allZeroCol(k,lowR,highR)==0){continue;}
 		if (inRequestedRange(start,stop,k) == 1){continue;}
-		fprintf(stderr,"%s",convert(k-MAXCW));
+		char cws[512];
+		convertCw((k-MAXCW),cws,512);
+		fprintf(stderr,"%s",cws);
 		//fprintf(stderr,"%d",(k-MAXCW));
 		for(int j=lowR;j<highR;++j){
 			if (allZeroRow(j,lowC,highC)==0){continue;}
 			if (inRequestedRange(start,stop,j) == 1){continue;}
 		//	fprintf(stderr,",%d", PRDSTDMODEL.dist[k][j].mean);
-				fprintf(stderr,",%d %d %d",
+				fprintf(stderr,",%d:%d:%d",
 					PRDSTDMODEL.dist[k][j].mean,
 					PRDSTDMODEL.dist[k][j].stddev,
 					PRDSTDMODEL.dist[k][j].max);
@@ -110,19 +114,26 @@ int dumpModel(int start, int stop){
 }
 int main(int argc, char *argv[]){
 	int start=0,stop=MAXCW;
-	if (argc == 3){
-		start=atoi(argv[1]);
-		stop=atoi(argv[2]);
-		if (start > stop) {
-			fprintf(stderr,"%s.%d stop must be > start\n",__FUNCTION__,__LINE__);
-			return(-1);
+	for (size_t i=1;i<argc;++i){
+		if (strcmp(argv[i],"--file")==0){
+			++i;
+			strcpy(modelFileName,argv[i]);
+			continue;
 		}
-
-	}
-	else if (argc != 1){
-		fprintf(stderr,"%s.%d usage %s or %s stop start\n",
-				__FUNCTION__,__LINE__,argv[0],argv[0]);
-		return(-1);
+		if (strcmp(argv[i],"--stop")==0){
+			++i;
+			stop=atoi(argv[i]);
+			continue;
+		}
+		if (strcmp(argv[i],"--start")==0){
+			++i;
+			start=atoi(argv[i]);
+			continue;
+		}
+		fprintf(stderr,
+			"%s.%d usage %s [--fileName FIlE] [--start N1] [--stop N2]\n",
+			__FUNCTION__,__LINE__,argv[0]);
+			exit(-1);
 	}
 	char *e=initCwMap();
 	if (e!=0){

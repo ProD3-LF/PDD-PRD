@@ -71,9 +71,11 @@ void initZProb(){
 		}
 	}
 }
-long long int rawObs[MAXFILES][MAXCW*2];
-void initRawObs(){
-	for(int i=0;i<MAXFILES;++i){
+long long int **rawObs;
+void initRawObs(size_t n){
+	rawObs=(long long int **)malloc(sizeof(long long int **)*n);
+	for(int i=0;i<n;++i){
+		rawObs[i]=(long long int *)malloc(sizeof(long long int *)*2*MAXCW);
 		for(int j=0;j<MAXCW*2;++j){
 			rawObs[i][j]=0;
 		}
@@ -193,6 +195,7 @@ int processInDir(char *inDirName){
 			__FUNCTION__,__LINE__,strerror(errno));
 		return(-1);
 	}
+	initRawObs(nFiles);
 	if (nFiles > MAXFILES){
 		fprintf(stderr,"%s.%d sampling %d of %d\n",
 			__FUNCTION__,__LINE__,MAXFILES,nFiles);
@@ -208,7 +211,6 @@ int processInDir(char *inDirName){
 
 int main(int argc,char *arv[]){
 	initZProb();
-	initRawObs();
 	char *e=initCwMap();
 	if (e!=0){
 		fprintf(stderr,"%s.%d initCwMap(): %s\n",__FUNCTION__,__LINE__,e);

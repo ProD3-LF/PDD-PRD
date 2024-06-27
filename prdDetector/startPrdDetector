@@ -25,4 +25,5 @@
 # */
 export LD_LIBRARY_PATH=.
 rm -rf /tmp/PRDFifo
+rm -rf /tmp/CORRELATORPRDFifo
 ./tstPrd

@@ -34,61 +34,23 @@ STOREDMODELDIR=$PD3_PREFIX`./getPrdParameter STOREDMODELDIR`
 CENTRAL=$PD3_PREFIX`./getPrdParameter CENTRAL`
 OBSCOLLECTED=$PD3_PREFIX`./getPrdParameter OBSCOLLECTED`
 STOREDCWMAPFILE=$PD3_PREFIX`./getPrdParameter STOREDCWMAPFILE`
-rm -rf $TMPWORKINGDIR
-mkdir -p $TMPWORKINGDIR
+TMPTARBALL=/tmp/p.tgz
 shopt -s extglob
+rm -rf $TMPWORKINGDIR
+rm -rf $TMPTARBALL
+mkdir -p $TMPWORKINGDIR
 VM=$1
-conflicts=""
-noconflicts=""
 mkdir -p $STOREDMODELDIR
-touch $STOREDCWMAPFILE
-for p in $OBSCOLLECTED/$VM/PRD/[0-9][0-9]*/
+cd $OBSCOLLECTED/$VM/PRD/
+rm -rf /tmp/prdFileList
+echo "preparing list of prdObs files"
+for i in [0-9][0-9]*/prdObs.[0-9][0-9]*
 do
-	echo "source dir is $p"
-	if test -d $p
-	then
-		i="$p/cwmap.obs"
-		if test -f $i
-		then
-			d=""
-			newcw=`cat $i | sed -e "s/^.*,//"`
-			for n in $newcw
-			do
-				echo $n
-				grep ",$n" $STOREDCWMPAFILE >/dev/null
-				if test "${?}" = "0"
-				then
-					echo $i has a conflict
-					d=`echo $i | sed -e "s/\/cwmap.obs$//"`
-					echo "conflict is $n"
-					conflicts="$conflicts $d"
-					break
-				fi
-			done
-			if test "${d}" = ""
-			then
-				d=`echo $i | sed -e "s/\/cwmap.obs$//"`
-				noconflicts="$noconflicts $d"
-				cat $i >> $STOREDCWMAPFILE
-				for k in $d/prdObs.[0-9][0-9]*
-				do
-					if test -f $k
-					then
-						cp $k $TMPWORKINGDIR
-					fi
-				done
-			fi
-		else
-			noconflicts="$noconflicts $p"
-			for k in $p/prdObs.[0-9][0-9]*
-			do
-				if test -f $k
-				then
-					cp $k $TMPWORKINGDIR
-				fi
-			done
-		fi
-	fi
+	echo $i >> /tmp/prdFileList
 done
-echo conflicts=$conflicts
-echo noconflicts=$noconflicts
+echo "creating tarball"
+tar -czf $TMPTARBALL --files-from=/tmp/prdFileList --transform 's/^.*\///'
+cd $TMPWORKINGDIR
+echo "extracting tarball"
+tar -xzf $TMPTARBALL
+
