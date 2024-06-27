@@ -23,20 +23,23 @@
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  */
-#include <time.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <string.h>
+#include "logMessage.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <linux/limits.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "logMessage.h"
+#include <time.h>
+#define MSECPERSEC 1000
+#define USECPERSEC 1000000
 long long unsigned int msecTime(){
         struct timespec t;
         clock_gettime(CLOCK_REALTIME,&t);
-        return(t.tv_sec*1000+t.tv_nsec/1000000);
+        return(t.tv_sec*MSECPERSEC+t.tv_nsec/USECPERSEC);
 }
+#define DIRMODE 0777
 int mkdirEach(char *path){
 	size_t n=strlen(path);
 	char part[PATH_MAX];
@@ -44,7 +47,7 @@ int mkdirEach(char *path){
 	for(size_t i=0;i<n;++i){
 		if ((part[k++]=path[i])=='/'){
 			part[k]='\0';
-			if (mkdir(part,0777)!=0){
+			if (mkdir(part,DIRMODE)!=0){
 				if (errno != EEXIST){
 		       			return(-1);
 				}
@@ -52,7 +55,7 @@ int mkdirEach(char *path){
 		}
 	}
 	part[k]='\0';
-	if (mkdir(part,0777)!=0){
+	if (mkdir(part,DIRMODE)!=0){
 		if (errno != EEXIST){
 		       	return(-1);
 		}

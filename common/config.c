@@ -24,33 +24,30 @@
  * http://www.apache.org/licenses/LICENSE-2.0
  */
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #define MAXCONFIGLINE 512
 char *get_config_string(FILE *f,char *key){
 	static char b[MAXCONFIGLINE];
-	char *k;
-	size_t kn;
-	kn=strlen(key)+1;
-	if ((k=malloc(MAXCONFIGLINE))==0){
+	size_t kn=strnlen(key,MAXCONFIGLINE)+1;
+	char *k=malloc(MAXCONFIGLINE);
+	if (k==0){
 		fprintf(stderr,"%s.%d malloc failed\n",__FUNCTION__,__LINE__);
 		exit(-1);
 	}
-	strcpy(k,key);
-	strcat(k,":");
+	strncpy(k,key,kn);
+	strncat(k,":",MAXCONFIGLINE-kn);
 	rewind(f);
 	while (fgets(b,sizeof(b),f)){
-		size_t vn;
-		char *vp;
 		if (strncmp(b,k,kn)==0){
-			vp=&b[kn+1];
-			vn=strlen(vp);
+			char *vp=&b[kn+1];
+			size_t vn=strlen(vp);
 			if (vp[vn-1]=='\n') {
 				vn--;
 				vp[vn]='\0';
 			}
-			strcpy(k,vp);
+			strncpy(k,vp,vn+1);
 			return(k);
 		}
 	}

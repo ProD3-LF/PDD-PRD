@@ -25,9 +25,9 @@
  */
 #ifndef LOGMESSAGE_H
 #define LOGMESSAGE_H
-#include <stdio.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdio.h>
 #include <sys/time.h>
 extern void logMessage(FILE *f,const char *func, int line, const char *format, ...);
 #endif

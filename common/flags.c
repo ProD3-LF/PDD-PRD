@@ -23,16 +23,17 @@
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  */
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
-#include <stdint.h>
 #include "flags.h"
 #include "fileDefs.h"
 #include "logMessage.h"
+#include <errno.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #define VFMT " %80[^{},\n\t]"
-int flagToCW[256];
+#define LONGSTRING 512
+int flagToCW[MAXCW2];
 int CWMAPN=0;
 int CURRENTCONTROLWORD=0;
 cwMap CWMAP[MAXCW];
@@ -42,50 +43,49 @@ int inRequestedRange(int start,int stop,int k){
 	int plusStart=start+MAXCW-1;
 	int plusStop=stop+MAXCW+1;
 	if (((k>minusStart)&&(k<minusStop))||
-		((k>plusStart)&&(k<plusStop))) return(0);
+		((k>plusStart)&&(k<plusStop))){return(0);}
 	return(1);
 }
 char *flagsAsString(uint8_t f) {
-	static char fs[512];
+	static char fs[LONGSTRING];
 	size_t i=0;
-	if ((f & URG)!=0){
-	       	strcpy(&fs[i],"Urg");
+	if ((f & URG)!=0){//NOLINT(hicpp-signed-bitwise)
+	       	strncpy(&fs[i],"Urg",LONGSTRING-i);
 		i+=3;
 	}
-	if ((f & ACK)!=0){
-	       	strcpy(&fs[i],"Ack");
+	if ((f & ACK)!=0){//NOLINT(hicpp-signed-bitwise)
+	       	strncpy(&fs[i],"Ack",LONGSTRING-i);
 		i+=3;
 	}
-	if ((f & PSH)!=0){
-	       	strcpy(&fs[i],"Psh");
+	if ((f & PSH)!=0){//NOLINT(hicpp-signed-bitwise)
+	       	strncpy(&fs[i],"Psh",LONGSTRING-i);
 		i+=3;
 	}
-	if ((f & RST)!=0){
-	       	strcpy(&fs[i],"Rst");
+	if ((f & RST)!=0){//NOLINT(hicpp-signed-bitwise)
+	       	strncpy(&fs[i],"Rst",LONGSTRING-i);
 		i+=3;
 	}
-	if ((f & SYN)!=0){
-	       	strcpy(&fs[i],"Syn");
+	if ((f & SYN)!=0){//NOLINT(hicpp-signed-bitwise)
+	       	strncpy(&fs[i],"Syn",LONGSTRING-i);
 		i+=3;
 	}
-	if ((f & FIN)!=0){
-	       	strcpy(&fs[i],"Fin");
-		i+=3;
+	if ((f & FIN)!=0){//NOLINT(hicpp-signed-bitwise)
+	       	strncpy(&fs[i],"Fin",LONGSTRING-i);
 	}
 	return(fs);
 }
 unsigned char flagsToInt(char *f){
 	unsigned char t=0;
-	if (strstr(f,"Urg")!=0) t |= URG;
-	if (strstr(f,"Ack")!=0) t |= ACK;
-	if (strstr(f,"Psh")!=0) t |= PSH;
-	if (strstr(f,"Rst")!=0) t |= RST;
-	if (strstr(f,"Syn")!=0) t |= SYN;
-	if (strstr(f,"Fin")!=0) t |= FIN;
+	if (strstr(f,"Urg")!=0){t |= URG;}//NOLINT(hicpp-signed-bitwise)
+	if (strstr(f,"Ack")!=0){t |= ACK;}//NOLINT(hicpp-signed-bitwise)
+	if (strstr(f,"Psh")!=0){t |= PSH;}//NOLINT(hicpp-signed-bitwise)
+	if (strstr(f,"Rst")!=0){t |= RST;}//NOLINT(hicpp-signed-bitwise)
+	if (strstr(f,"Syn")!=0){t |= SYN;}//NOLINT(hicpp-signed-bitwise)
+	if (strstr(f,"Fin")!=0){t |= FIN;}//NOLINT(hicpp-signed-bitwise)
 	return(t);
 }
 void initFlagToCW() {
-	for (size_t i=0;i<256;++i){
+	for (size_t i=0;i<MAXCW2;++i){
 		flagToCW[i]=0;
 	}
 	for (size_t i=0;i<CWMAPN;++i){
@@ -105,8 +105,8 @@ void convertCw(int cw,char *cws,size_t n){
 	       strncpy(cws,"ALL",n);
 	       return;
        }
-       if (cw < 0) cws[0]='-';
-       else cws[0]='+';
+       if (cw < 0){cws[0]='-';}
+       else{cws[0]='+';}
        cws[1]='\0';
        for (size_t i=0;i<CWMAPN;++i){
 	       if (CWMAP[i].cw == cw){
@@ -119,13 +119,12 @@ void convertCw(int cw,char *cws,size_t n){
 	       }
        }
        snprintf(&cws[1],n-1,"UNK-CW-%d",abs(cw));
-       return;
 }
 void setMinMaxCw(int *minCw,int *maxCw){
 	*maxCw=0;
-	*minCw=MAXCW*2;
+	*minCw=MAXCW2;
 	for(size_t i=0;i<MAXCW;++i){
-		if (CWMAP[i].cw > *maxCw)  *maxCw = CWMAP[i].cw;
+		if (CWMAP[i].cw > *maxCw){*maxCw = CWMAP[i].cw;}
 	}
 	*minCw=0 - *maxCw;
 	*maxCw=MAXCW + *maxCw;
@@ -134,27 +133,24 @@ void setMinMaxCw(int *minCw,int *maxCw){
 
 char initCwMapError[ERROR_STRING];
 char *initCwMap(){
-	FILE *f;
-	int i;
-	for(i=0;i<MAXCW;++i){
+	for(int i=0;i<MAXCW;++i){
 		CWMAP[i].controlWordString[0]='\0';
 		CWMAP[i].cw=0;
 	}
-	if ((f=fopen(CWMAPFILE,"r"))!=0){
-		char b[512];
-		while(fgets(b,512,f)){
-			if (sscanf(b,VFMT "," "%d",
+	FILE *f=fopen(CWMAPFILE,"re");
+	if (f!=0){
+		char b[LONGSTRING];
+		while(fgets(b,LONGSTRING,f)){
+			if (sscanf(b,VFMT "," "%d", //NOLINT(cert-err34-c)
 				CWMAP[CWMAPN].controlWordString,&CWMAP[CWMAPN].cw)!=2){
 				fclose(f);
 				sprintf(initCwMapError,"%s.%d cannont parse %s/n",__FUNCTION__,__LINE__,b);
 				return(initCwMapError);
 			}
-			else{
-				if (CWMAP[CWMAPN].cw > CURRENTCONTROLWORD){
-					CURRENTCONTROLWORD=CWMAP[CWMAPN].cw;
-				}
-				++CWMAPN;
+			if (CWMAP[CWMAPN].cw > CURRENTCONTROLWORD){
+				CURRENTCONTROLWORD=CWMAP[CWMAPN].cw;
 			}
+			++CWMAPN;
 		}
 		fclose(f);
 	}

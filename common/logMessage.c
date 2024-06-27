@@ -23,9 +23,8 @@
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  */
-#include <stdio.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <sys/time.h>
 
 void logMessage(FILE *f,const char *func, int line, const char *format, ...) {

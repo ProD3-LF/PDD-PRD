@@ -23,8 +23,8 @@
  *
  * http://www.apache.org/licenses/LICENSE-2.0
  */
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 #ifndef FLAGS_H
 #define FLAGS_H
 #define FIN 0x1
@@ -34,13 +34,13 @@
 #define ACK 0x10
 #define URG 0x20
 #define MAXCW 128
+#define MAXCW2 256
 #define ERROR_STRING 10000
 extern int convertCwName(char *cwName);
 extern void convertCw(int cw,char *cws,size_t n);
 extern int inRequestedRange(int start,int stop,int k);
 extern int CWMAPN;
 extern int flagToCW[];
-extern int CWMAPN;
 extern int CURRENTCONTROLWORD;
 struct cwMap_ {
 	char controlWordString[MAXCW];

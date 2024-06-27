@@ -29,3 +29,31 @@ pddservers: 192.168.2.1:80
 prdmode: detect
 #prdservers: 127.0.0.1:5964
 prdservers: 192.168.2.1:80
+sldservers: 192.168.2.1:80
+sldmode: detect
+correlator,mode: detect
+correlator,classRule1: AF0 PRDALLSD2(+Rst) PRDSD2(-AckFin,+AckFin) PRDSD2(-Syn,+AckFin) PRDSD2(+Rst,+AckPsh) PRDSD2(+AckFin,-AckFin) PRDSD2(+AckFin,-Syn) PRDSD2(+AckFin,+AckSyn) PRDSD2(+AckSyn,+AckFin)
+correlator,classRule2: AF1 SLDTIMELOW SLDTIMEZERO SLDCOUNTMAXLOW PRDALLSD2(+Rst) PRDSD2(-AckFin,+AckFin) PRDSD2(-Syn,+AckFin) PRDSD2(+Rst,+AckPsh) PRDSD2(+AckFin,-AckFin) PRDSD2(+AckFin,-Syn) PRDSD2(+AckFin,+AckSyn) PRDSD2(+AckSyn,+AckFin)
+correlator,classRule3: AF2 SLDTIMELOW SLDTIMEZERO SLDCOUNTMAXLOW PRDALLMAX(+Rst) PRDSD2(-AckFin,+AckFin) PRDSD2(-Syn,+AckFin) PRDSD2(+Rst,+AckPsh) PRDSD2(+AckFin,-AckFin) PRDSD2(+AckFin,-Syn) PRDSD2(+AckFin,+AckSyn) PRDSD2(+AckSyn,+AckFin)
+correlator,classRule4: AF3 SLDTIMELOW SLDTIMEZERO SLDCOUNTMAXLOW PRDALLMAX(+Rst) PRDSD2(-AckFin,+AckFin) PRDSD2(-Syn,+AckFin) PRDSD2(+Rst,+AckPsh) PRDSD2(+AckFin,-AckFin) PRDSD2(+AckFin,-Syn) PRDSD2(+AckFin,+AckSyn) PRDSD2(+AckSyn,+AckFin) PDDSTARTANOM
+correlator,classRule5: getFlood PRDALLMAX(+Ack) PRDMAX(+Ack,-Ack) PRDMAX(+Ack,-Syn) PRDMAX(+Ack,+AckSyn)
+correlator,classRule3: stomp PRDMAX(-AckPsh,-Syn) PRDMAX(-AckPsh,+AckSyn) PRDMAX(-AckPsh,+AckFin) PRDMAX(+Rst,-Syn)
+correlator,classRule6: SF1 PRDALLMAX(+AckSyn) PRDMAX(+AckSyn,-AckFin) PRDMAX(+AckSyn,-AckPsh) PRDMAX(+AckSyn,-Ack)
+correlator,classRule7: SF1SPF SLDTIMEZERO PRDALLMAX(+AckSyn) PRDMAX(+AckSyn,-AckFin) PRDMAX(+AckSyn,-AckPsh) PRDMAX(+AckSyn,-Ack)
+correlator,classRule8: SF2 PDDSTARTANOM PRDALLMAX(-Syn) PRDALLMAX(-Ack) PRDALLMAX(+AckPsh) PRDMAX(-Syn,-AckFin) PRDMAX(+Rst,-Syn) PRDMAX(+AckSyn,-Syn)
+correlator,classRule9: SF2SPF SLDTIMEZERO PDDSTARTANOM PRDALLMAX(-Syn) PRDALLMAX(-Ack) PRDALLMAX(+AckPsh) PRDMAX(-Syn,-AckFin) PRDMAX(+Rst,-Syn) PRDMAX(+AckSyn,-Syn)
+correlator,classRule10: SF3 PDDSTARTANOM PRDALLMAX(-Syn) PRDMAX(-Syn,-AckFin) PRDMAX(-Syn,+AckSyn) PRDMAX(+Rst,-Syn) PRDMAX(+AckSyn,-Syn) PRDMAX(-Syn,-AckFin)
+correlator,classRule11: SF3SPF SLDTIMEZERO PDDSTARTANOM PRDALLMAX(-Syn) PRDMAX(-Syn,-AckFin) PRDMAX(-Syn,+AckSyn) PRDMAX(+Rst,-Syn) PRDMAX(+AckSyn,-Syn) PRDMAX(-Syn,-AckFin)
+correlator,classRule13: ST0 PDDANOM PDDSTARTANOM PRDALLMAX(-Ack) PRDALLMAX(+AckPsh) PRDALLMAX(-AckPsh) PRDALLMAX(+Rst) PRDMAX(+Rst,-AckFin)
+correlator,classRule14: AH0 PDDANOM PDDSTARTANOM PRDSD2(-AckFin,+AckSyn) PRDSD2(-AckFin,+Rst) PRDSD2(-AckFin,-Syn) PRDSD2(+AckSyn,-AckFin) PRDSD2(+Rst,-AckFin) PRDSD2(-Syn,-AckFin)
+correlator,classRule15: AH1 PDDANOM PDDSTARTANOM PRDMAX(-AckFin,+AckSyn) PRDMAX(-AckFin,+Rst) PRDMAX(-AckFin,-Syn) PRDMAX(+AckSyn,-AckFin) PRDMAX(+Rst,-AckFin) PRDMAX(-Syn,-AckFin)
+correlator,attributionRule1: AF1 SLDTIMEZERO
+correlator,attributionRule2: getFlood PDDSTARTANOM
+correlator,attributionRule3: stomp PDDSTARTANOM
+correlator,attributionRule4: SF1 PDDSTARTANOM SLDTIMEZERO
+correlator,attributionRule5: SF2 PDDSTARTANOM SLDTIMEZERO
+correlator,attributionRule6: AF2 SLDTIMEZERO
+correlator,attributionRule7: AF3 SLDTIMEZERO PDDSTARTANOM
+correlator,attributionRule8: SF3 PDDSTARTANOM SLDTIMEZERO
+correlator,attributionRule10: AH0 PDDSTARTANOM
+correlator,attributionRule11: AH1 PDDSTARTANOM

@@ -25,8 +25,8 @@
  */
 #ifndef CONFIG_H
 #define CONFIG_H
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 #define CONFIGFILE "../common/config"
 extern char *get_config_string(FILE *f,char *key);
 extern bool  get_config_boolean(FILE *f,char *key);
