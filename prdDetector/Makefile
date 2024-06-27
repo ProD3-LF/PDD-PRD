@@ -146,7 +146,7 @@ tstPrd: $(tstObjects)
 clean:
 	rm -f .prdDepend 
 	rm -f .tstDepend 
-	rm -f .getPrdParamaterDepend 
+	rm -f .getPrdParameterDepend 
 	rm -f .buildCorModelDepend 
 	rm -f .buildZeroModelDepend 
 	rm -f .buildStdModelDepend 
