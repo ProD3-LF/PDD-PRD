@@ -36,7 +36,7 @@ mkdir -p $SLDMODELDIR
 rm -rf ../central/observations/collected/*/SLD
 rm -rf ../central/observations/uncollected/*/SLD
 echo "TIME03: 1000" > $SLDMODELDIR/SLDMODEL
-echo "TIME97: 1" > $SLDMODELDIR/SLDMODEL
+echo "TIME97: 1" >> $SLDMODELDIR/SLDMODEL
 echo "TIME0: 1000" >> $SLDMODELDIR/SLDMODEL
 echo "TIME100: 1" >> $SLDMODELDIR/SLDMODEL
 echo "COUNT03: 1000" >> $SLDMODELDIR/SLDMODEL
