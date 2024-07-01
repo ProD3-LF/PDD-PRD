@@ -26,11 +26,11 @@
 # */
 pddmode: detect-record
 #pddservers: 127.0.0.1:5964
-pddservers: SERVER:443
+pddservers: SERVER:PORT
 prdmode: detect-record
 #prdservers: 127.0.0.1:5964
-prdservers: SERVER:443
-sldservers: SERVER:443
+prdservers: SERVER:PORT
+sldservers: SERVER:PORT
 sldmode: detect-record
 correlator,mode: detect-record
 correlator,classRule1: AF1 PRDMAX(-Ack,+Ack) PRDMAX(+Rst,-Syn)
